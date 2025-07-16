@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<prompts>
+    <prompt key="claude pre prompt">Here is what I attempted to do</prompt>
+    <prompt key="pre git diff">Here are the actual changes that were made</prompt>
+    <roles>
+        <prompt key="error handling">Review the changes I made and tell me whether I handled all error scenarios at the highest standard. If not, what should be improved?</prompt>
+        <prompt key="security review">Analyze the code for potential security vulnerabilities, including but not limited to: input validation, authentication bypasses, injection attacks, and data exposure. Suggest security improvements where needed.</prompt>
+        <prompt key="performance review">Evaluate the code for performance bottlenecks, inefficient algorithms, memory leaks, and scalability issues. Suggest optimizations for better performance and resource utilization.</prompt>
+        <prompt key="code quality">Assess code readability, maintainability, and adherence to best practices. Check for proper naming conventions, code structure, documentation, and design patterns. Identify areas that need refactoring.</prompt>
+        <prompt key="testing coverage">Review the testing strategy and coverage. Identify missing test cases, edge cases that aren't covered, and suggest improvements to the test suite for better reliability.</prompt>
+        <prompt key="dependency audit">Analyze external dependencies for security vulnerabilities, outdated versions, and unnecessary packages. Recommend updates or alternatives where appropriate.</prompt>
+        <prompt key="api design">Evaluate API design for consistency, usability, versioning strategy, and backwards compatibility. Suggest improvements for better developer experience.</prompt>
+        <prompt key="logging monitoring">Review logging implementation and monitoring capabilities. Ensure adequate logging for debugging, audit trails, and operational visibility without exposing sensitive data.</prompt>
+        <prompt key="data validation">Examine all data inputs and outputs for proper validation, sanitization, and encoding. Check for potential data corruption or loss scenarios.</prompt>
+        <prompt key="concurrency review">Analyze code for thread safety, race conditions, deadlocks, and proper synchronization. Suggest improvements for concurrent execution scenarios.</prompt>
+        <prompt key="deployment readiness">Assess configuration management, environment variables, secrets handling, and deployment scripts. Ensure the code is ready for different deployment environments.</prompt>
+        <prompt key="accessibility compliance">Review UI/UX code for accessibility compliance (WCAG standards), including keyboard navigation, screen reader support, and proper ARIA attributes.</prompt>
+    </roles>
+</prompts>

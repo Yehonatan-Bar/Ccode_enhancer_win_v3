@@ -3,6 +3,33 @@ import sys
 import xml.etree.ElementTree as ET
 import argparse
 import time
+import os
+
+def get_git_diff_last_commit():
+    """Get the diff between the last commit and the previous one."""
+    try:
+        # Check if we're in a git repository
+        subprocess.run(['git', 'rev-parse', '--git-dir'], capture_output=True, check=True)
+        
+        # Get the diff between HEAD and HEAD~1
+        result = subprocess.run(
+            ['git', 'diff', 'HEAD~1', 'HEAD'],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        
+        if result.returncode == 0 and result.stdout:
+            return f"\n\n# Git Diff from Last Commit:\n{result.stdout}"
+        elif "ambiguous argument 'HEAD~1'" in result.stderr:
+            return "\n\n# Git Diff: This appears to be the first commit (no previous commit exists)."
+        else:
+            return ""
+            
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return ""
+    except Exception:
+        return ""
 
 def parse_prompt_library(xml_file):
     """Parse the prompt library XML and extract role prompts."""
@@ -23,7 +50,13 @@ def parse_prompt_library(xml_file):
 
 def run_claude_with_role(role_prompt):
     """Run the claude command with the given role prompt."""
-    command = ['python', 'run_claude.py', role_prompt, '--dangerously-skip-permissions']
+    # Get git diff from last commit
+    git_diff = get_git_diff_last_commit()
+    
+    # Append git diff to the role prompt
+    enhanced_prompt = role_prompt + git_diff
+    
+    command = ['python', 'run_claude.py', enhanced_prompt, '--dangerously-skip-permissions']
     
     try:
         print(f"\n{'='*60}")
@@ -81,8 +114,16 @@ def main():
     for i, role in enumerate(args.roles):
         print(f"\n{'#'*60}")
         print(f"# Role {i+1}/{len(args.roles)}: {role}")
-        print(f"# Prompt: {role_prompts[role][:50]}...")
         print(f"{'#'*60}")
+        
+        # Get the git diff to show what will be included
+        git_diff = get_git_diff_last_commit()
+        full_prompt = role_prompts[role] + git_diff
+        
+        print(f"\n## Full prompt being sent to Claude:")
+        print(f"{'-'*60}")
+        print(full_prompt)
+        print(f"{'-'*60}\n")
         
         success = run_claude_with_role(role_prompts[role])
         

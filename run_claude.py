@@ -217,7 +217,7 @@ def run_claude_windows(prompt, skip_permissions=False, timeout=300):
         # Open log file for writing
         log_file = open(log_path, 'w', encoding='utf-8')
         log_file.write(f"Claude session started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        log_file.write(f"Prompt: {prompt[:200]}{'...' if len(prompt) > 200 else ''}\n")
+        log_file.write(f"Prompt: {prompt}\n")
         log_file.write("=" * 80 + "\n\n")
         log_file.flush()
         
@@ -352,7 +352,7 @@ def run_claude_unix(prompt, skip_permissions=False, timeout=300):
         # Open log file for writing
         log_file = open(log_path, 'w', encoding='utf-8')
         log_file.write(f"Claude session started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        log_file.write(f"Prompt: {prompt[:200]}{'...' if len(prompt) > 200 else ''}\n")
+        log_file.write(f"Prompt: {prompt}\n")
         log_file.write("=" * 80 + "\n\n")
         log_file.flush()
         

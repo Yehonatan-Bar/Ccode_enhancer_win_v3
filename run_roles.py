@@ -48,13 +48,13 @@ def parse_prompt_library(xml_file):
     
     return role_prompts
 
-def run_claude_with_role(role_prompt):
+def run_claude_with_role(role_prompt, additional_prompt=""):
     """Run the claude command with the given role prompt."""
     # Get git diff from last commit
     git_diff = get_git_diff_last_commit()
     
-    # Append git diff to the role prompt
-    enhanced_prompt = role_prompt + git_diff
+    # Append additional prompt and git diff to the role prompt
+    enhanced_prompt = role_prompt + additional_prompt + git_diff
     
     command = ['python', 'run_claude.py', enhanced_prompt, '--dangerously-skip-permissions']
     
@@ -87,6 +87,7 @@ def main():
     parser.add_argument('roles', nargs='+', help='List of roles to use (e.g., "error handling" "security review")')
     parser.add_argument('--prompt-library', default='prompt_library.xml', help='Path to prompt library XML file')
     parser.add_argument('--delay', type=int, default=2, help='Delay in seconds between each role execution')
+    parser.add_argument('--prompt', type=str, default='', help='Additional prompt string to concatenate with role prompts')
     
     args = parser.parse_args()
     
@@ -118,14 +119,14 @@ def main():
         
         # Get the git diff to show what will be included
         git_diff = get_git_diff_last_commit()
-        full_prompt = role_prompts[role] + git_diff
+        full_prompt = role_prompts[role] + args.prompt + git_diff
         
         print(f"\n## Full prompt being sent to Claude:")
         print(f"{'-'*60}")
         print(full_prompt)
         print(f"{'-'*60}\n")
         
-        success = run_claude_with_role(role_prompts[role])
+        success = run_claude_with_role(role_prompts[role], args.prompt)
         
         if not success:
             print(f"\nWarning: Role '{role}' execution failed")

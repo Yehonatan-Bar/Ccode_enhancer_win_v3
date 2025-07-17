@@ -5,10 +5,13 @@ import argparse
 import time
 import os
 import json
+from cc_logging import setup_logger, log_session_start, log_session_end, log_exception, log_claude_invocation, log_claude_response
 
 def get_git_diff_last_commit():
     """Get the diff by calling the external git_diff_last_commit.py script."""
+    logger = setup_logger('cc_enhancer.roles')
     try:
+        logger.debug("Getting git diff from last commit")
         # Run the external script
         result = subprocess.run(
             ['python', 'git_diff_last_commit.py'],
@@ -20,6 +23,7 @@ def get_git_diff_last_commit():
         )
         
         if result.returncode == 0 and result.stdout:
+            logger.debug(f"Git diff command succeeded, output length: {len(result.stdout)}")
             # Extract just the diff part from the output
             lines = result.stdout.split('\n')
             diff_started = False
@@ -40,15 +44,20 @@ def get_git_diff_last_commit():
                     diff_lines.pop()
                 
                 diff_content = '\n'.join(diff_lines)
+                logger.debug(f"Git diff content length: {len(diff_content)}")
                 return f"\n\n# Git Diff (Uncommitted Changes):\n{diff_content}"
             else:
+                logger.info("No uncommitted changes found")
                 return "\n\n# Git Diff: No uncommitted changes found."
         else:
+            logger.error(f"Git diff command failed with return code: {result.returncode}")
             return "\n\n# Git Diff: Failed to get diff information."
             
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        logger.error(f"Failed to run git_diff_last_commit.py: {e}")
         return "\n\n# Git Diff: Could not run git_diff_last_commit.py"
     except Exception as e:
+        log_exception(logger, e, "get_git_diff_last_commit")
         return f"\n\n# Git Diff: Error - {type(e).__name__}: {e}"
 
 def parse_prompt_library(xml_file):
@@ -91,8 +100,10 @@ def build_role_prompt(role_name, role_prompts, severities):
     
     return "\n\n".join(prompt_parts) if prompt_parts else None
 
-def run_claude_with_role(role_prompt, additional_prompt=""):
+def run_claude_with_role(role_prompt, additional_prompt="", role_name="Unknown"):
     """Run the claude command with the given role prompt."""
+    logger = setup_logger('cc_enhancer.roles')
+    
     # Get git diff from last commit
     git_diff = get_git_diff_last_commit()
     
@@ -101,12 +112,17 @@ def run_claude_with_role(role_prompt, additional_prompt=""):
     
     command = ['python', 'run_claude.py', enhanced_prompt, '--dangerously-skip-permissions']
     
+    # Log Claude invocation
+    logger.info(f"Invoking Claude for role: {role_name}")
+    log_claude_invocation(logger, enhanced_prompt, ' '.join(command))
+    
     try:
         print(f"\n{'='*60}")
         print(f"Running Claude with role prompt...")
         print(f"{'='*60}\n")
         
         # Run the command and wait for it to complete
+        logger.info("Executing Claude subprocess...")
         result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', errors='replace')
         
         # Print the output
@@ -122,16 +138,26 @@ def run_claude_with_role(role_prompt, additional_prompt=""):
             except UnicodeEncodeError:
                 print(f"Error output: {result.stderr.encode('ascii', 'replace').decode('ascii')}", file=sys.stderr)
         
+        # Log Claude response
+        log_claude_response(logger, result.stdout if result.stdout else result.stderr, result.returncode, result.stderr if result.returncode != 0 else None)
+        
         if result.returncode != 0:
             print(f"Command failed with return code: {result.returncode}")
+            logger.error(f"Claude execution failed for role {role_name} with return code: {result.returncode}")
+        else:
+            logger.info(f"Claude execution succeeded for role {role_name}")
         
         return result.returncode == 0
         
     except Exception as e:
         print(f"Error running command: {e}", file=sys.stderr)
+        log_exception(logger, e, f"run_claude_with_role for {role_name}")
         return False
 
 def main():
+    # Set up logger
+    logger = setup_logger('cc_enhancer.roles')
+    
     parser = argparse.ArgumentParser(
         description='Run Claude with different role-based prompts from config',
         epilog='Example: python run_roles.py --additional-context "Focus on the new API endpoints"'
@@ -205,10 +231,11 @@ def main():
             print(full_prompt.encode('ascii', 'replace').decode('ascii'))
         print(f"{'-'*60}\n")
         
-        success = run_claude_with_role(role_prompt, args.additional_context)
+        success = run_claude_with_role(role_prompt, args.additional_context, role_name)
         
         if not success:
             print(f"\nWarning: Role '{role_name}' execution failed")
+            logger.warning(f"Role '{role_name}' execution failed")
         
         # Add delay between executions (except for the last one)
         if i < len(active_roles) - 1:
@@ -218,6 +245,8 @@ def main():
     print(f"\n{'='*60}")
     print("All roles completed!")
     print(f"{'='*60}")
+    
+    logger.info(f"All {len(active_roles)} roles completed successfully")
 
 if __name__ == "__main__":
     main()

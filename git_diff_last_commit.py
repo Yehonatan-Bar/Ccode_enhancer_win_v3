@@ -5,10 +5,14 @@ Script to show the differences between the last commit and the current uncommitt
 
 import subprocess
 import sys
+from cc_logging import setup_logger, log_exception
 
 
 def get_git_diff():
     """Get the diff between the last commit and current uncommitted changes."""
+    logger = setup_logger('cc_enhancer.git_diff')
+    logger.debug("Starting git diff generation")
+    
     try:
         all_output = []
         
@@ -21,8 +25,11 @@ def get_git_diff():
         )
         
         if result.stdout:
+            logger.info(f"Found modified tracked files: {len(result.stdout.splitlines())} lines")
             all_output.append("=== Modified tracked files ===")
             all_output.append(result.stdout)
+        else:
+            logger.debug("No modified tracked files found")
         
         # Get the list of untracked files
         untracked_result = subprocess.run(
@@ -35,6 +42,7 @@ def get_git_diff():
         if untracked_result.stdout:
             untracked_files = untracked_result.stdout.strip().split('\n')
             untracked_files = [f for f in untracked_files if f]  # Remove empty strings
+            logger.info(f"Found {len(untracked_files)} untracked files")
             
             # Filter out less important files to focus on code changes
             important_extensions = ['.py', '.js', '.ts', '.jsx', '.tsx', '.java', '.cpp', '.c', '.h', 
@@ -50,6 +58,7 @@ def get_git_diff():
                     filtered_files.append(f)
             
             untracked_files = filtered_files
+            logger.debug(f"Filtered to {len(untracked_files)} relevant untracked files")
             
             if untracked_files:
                 all_output.append("\n=== New untracked files ===")
@@ -92,6 +101,7 @@ def get_git_diff():
         
         # Output everything
         if final_output:
+            logger.info(f"Generated diff output: {len('\n'.join(final_output).splitlines())} lines")
             print("Differences between the last commit and current uncommitted changes:")
             print("-" * 80)
             
@@ -105,19 +115,27 @@ def get_git_diff():
             else:
                 print(combined_output)
         else:
+            logger.info("No uncommitted changes found")
             print("No uncommitted changes found.")
             
     except subprocess.CalledProcessError as e:
+        logger.error(f"Git command failed with return code {e.returncode}")
         if e.stderr:
+            logger.error(f"Git error: {e.stderr}")
             print(f"Git error: {e.stderr}")
         else:
             print(f"Git command failed with return code {e.returncode}")
+        log_exception(logger, e, "get_git_diff")
         sys.exit(1)
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        logger.error("Git is not installed or not in PATH")
         print("Error: Git is not installed or not in PATH.")
+        log_exception(logger, e, "get_git_diff")
         sys.exit(1)
     except Exception as e:
+        logger.error(f"Unexpected error in get_git_diff: {type(e).__name__}: {e}")
         print(f"Unexpected error: {type(e).__name__}: {e}")
+        log_exception(logger, e, "get_git_diff")
         sys.exit(1)
 
 
@@ -178,6 +196,9 @@ def get_status_info():
 
 def main():
     """Main function to handle the script execution."""
+    logger = setup_logger('cc_enhancer.git_diff')
+    logger.info("git_diff_last_commit.py started")
+    
     try:
         # Check if we're in a git repository
         subprocess.run(
@@ -186,9 +207,11 @@ def main():
             check=True
         )
     except subprocess.CalledProcessError:
+        logger.error("Not in a git repository")
         print("Error: Not in a git repository.")
         sys.exit(1)
     except FileNotFoundError:
+        logger.error("Git is not installed or not in PATH")
         print("Error: Git is not installed or not in PATH.")
         sys.exit(1)
     

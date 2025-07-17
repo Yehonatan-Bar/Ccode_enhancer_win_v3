@@ -15,10 +15,14 @@ import threading
 import queue
 import time
 from datetime import datetime
+from cc_logging import setup_logger, log_exception
 
 
 def validate_claude_installation():
     """Check if Claude CLI is installed and accessible."""
+    logger = setup_logger('cc_enhancer.claude')
+    logger.debug("Validating Claude CLI installation")
+    
     commands_to_try = ['claude', 'claude-code']
     
     # On Windows, also try with .cmd extension and full npm path
@@ -35,6 +39,7 @@ def validate_claude_installation():
         try:
             # Try with shell=True on Windows to handle .cmd files properly
             shell = platform.system() == "Windows" and cmd.endswith('.cmd')
+            logger.debug(f"Trying command: {cmd} (shell={shell})")
             result = subprocess.run(
                 [cmd, '--version'] if not shell else f'"{cmd}" --version',
                 capture_output=True,
@@ -42,15 +47,26 @@ def validate_claude_installation():
                 shell=shell
             )
             if result.returncode == 0:
+                logger.info(f"Found working Claude CLI: {cmd}")
                 return True
-        except (FileNotFoundError, subprocess.CalledProcessError):
+            else:
+                logger.debug(f"Command {cmd} failed with return code {result.returncode}")
+        except (FileNotFoundError, subprocess.CalledProcessError) as e:
+            logger.debug(f"Command {cmd} not found or failed: {e}")
+            continue
+        except Exception as e:
+            logger.error(f"Unexpected error checking {cmd}: {e}")
             continue
     
+    logger.error("Claude CLI not found in any expected location")
     return False
 
 
 def setup_claude_environment():
     """Set up CLAUDE_CODE_GIT_BASH_PATH if not already set."""
+    logger = setup_logger('cc_enhancer.claude')
+    logger.debug("Setting up Claude environment")
+    
     # First check if Claude is installed
     if not validate_claude_installation():
         print("Error: Claude CLI is not installed or not in PATH.")
@@ -104,6 +120,9 @@ def setup_claude_environment():
 
 def get_claude_command():
     """Get the correct claude command to use."""
+    logger = setup_logger('cc_enhancer.claude')
+    logger.debug("Getting Claude command")
+    
     commands_to_try = ['claude', 'claude-code']
     
     # On Windows, also try with .cmd extension and full npm path
@@ -120,6 +139,7 @@ def get_claude_command():
         try:
             # Try with shell=True on Windows to handle .cmd files properly
             shell = platform.system() == "Windows" and cmd.endswith('.cmd')
+            logger.debug(f"Checking command availability: {cmd} (shell={shell})")
             result = subprocess.run(
                 [cmd, '--version'] if not shell else f'"{cmd}" --version',
                 capture_output=True,
@@ -127,10 +147,18 @@ def get_claude_command():
                 shell=shell
             )
             if result.returncode == 0:
+                logger.info(f"Using Claude command: {cmd}")
                 return cmd
-        except (FileNotFoundError, subprocess.CalledProcessError):
+            else:
+                logger.debug(f"Command {cmd} failed with return code {result.returncode}")
+        except (FileNotFoundError, subprocess.CalledProcessError) as e:
+            logger.debug(f"Command {cmd} not available: {e}")
+            continue
+        except Exception as e:
+            logger.error(f"Unexpected error with command {cmd}: {e}")
             continue
     
+    logger.error("No working Claude command found")
     return None
 
 
@@ -143,18 +171,32 @@ def create_log_file():
 
 def run_claude_windows(prompt, skip_permissions=False, timeout=300):
     """Run Claude on Windows with interactive prompt handling."""
+    logger = setup_logger('cc_enhancer.claude')
+    logger.info("=" * 60)
+    logger.info("Starting Claude execution on Windows")
+    logger.info(f"Skip permissions: {skip_permissions}")
+    logger.info(f"Timeout: {timeout}s")
+    logger.info(f"Working directory: {os.getcwd()}")
+    logger.info(f"PATH: {os.environ.get('PATH', 'Not set')}")
+    logger.info(f"Prompt length: {len(prompt)} characters")
+    logger.info("=" * 60)
+    
     # Ensure environment is set up
     if not setup_claude_environment():
+        logger.error("Failed to set up Claude environment")
         return "", -1
     
     # Get the correct claude command
     claude_cmd = get_claude_command()
     if not claude_cmd:
+        logger.error("CRITICAL: No Claude command found - this is likely the MODULE_NOT_FOUND issue")
+        logger.error("Check that Claude Code is installed: npm install -g @anthropic-ai/claude-code")
         return "", -2
     
-    # Create log file
+    # Create individual session log file (in addition to cc_app.log)
     log_path = create_log_file()
     print(f"Logging Claude output to: {log_path}")
+    logger.info(f"Creating session log file: {log_path}")
     
     # Build command - use stdin for long prompts
     cmd = [claude_cmd, '--print']
@@ -171,17 +213,25 @@ def run_claude_windows(prompt, skip_permissions=False, timeout=300):
         # Create a copy of the environment with the Git Bash path
         env = os.environ.copy()
         
+        # Log environment details
+        logger.debug(f"Environment variables: COMSPEC={env.get('COMSPEC', 'Not set')}")
+        logger.debug(f"Environment variables: PATHEXT={env.get('PATHEXT', 'Not set')}")
+        
         # Ensure Git Bash path is set in the environment
         if 'CLAUDE_CODE_GIT_BASH_PATH' in env:
             print(f"Using Git Bash at: {env['CLAUDE_CODE_GIT_BASH_PATH']}")
+            logger.info(f"Git Bash path configured: {env['CLAUDE_CODE_GIT_BASH_PATH']}")
         
         # Use Popen for interactive handling
         # Use shell=True for .cmd files on Windows
         use_shell = platform.system() == "Windows" and claude_cmd.endswith('.cmd')
+        logger.info(f"Executing Claude with shell={use_shell}, stdin={use_stdin}")
+        logger.debug(f"Full command: {' '.join(cmd)}")
         
         if use_stdin:
             # When using stdin, we need to use a different approach
             cmd_str = ' '.join(f'"{c}"' if ' ' in c else c for c in cmd) if use_shell else cmd
+            logger.debug(f"Command string for shell: {cmd_str}")
             process = subprocess.Popen(
                 cmd_str,
                 stdin=subprocess.PIPE,
@@ -296,27 +346,45 @@ def run_claude_windows(prompt, skip_permissions=False, timeout=300):
         
         # Check if claude command was not found
         if returncode == 127 or "not found" in output.lower():
+            logger.error(f"Claude command not found (return code: {returncode})")
+            logger.error(f"Output contained: {output[:200]}")
             return "", -2
         
+        # Check for the specific MODULE_NOT_FOUND error
+        if "MODULE_NOT_FOUND" in output or "Cannot find module" in output:
+            logger.error("CRITICAL: MODULE_NOT_FOUND error detected!")
+            logger.error(f"Full error output: {output}")
+            logger.error("This indicates Claude CLI is not properly installed or npm modules are corrupted")
+        
+        logger.info(f"Claude process completed with return code: {returncode}")
         return output, returncode
         
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        logger.error(f"FileNotFoundError when running Claude: {e}")
+        log_exception(logger, e, "run_claude_windows")
         return "", -2
     except Exception as e:
         print(f"Error: {e}")
+        logger.error(f"Unexpected error in run_claude_windows: {type(e).__name__}: {e}")
+        log_exception(logger, e, "run_claude_windows")
         return "", -3
 
 
 def run_claude_unix(prompt, skip_permissions=False, timeout=300):
     """Run Claude on Unix-like systems with interactive prompt handling."""
+    logger = setup_logger('cc_enhancer.claude')
+    logger.info("Starting Claude execution on Unix")
+    
     # Get the correct claude command
     claude_cmd = get_claude_command()
     if not claude_cmd:
+        logger.error("No Claude command found on Unix system")
         return "", -2
     
-    # Create log file
+    # Create individual session log file (in addition to cc_app.log)
     log_path = create_log_file()
     print(f"Logging Claude output to: {log_path}")
+    logger.info(f"Creating session log file: {log_path}")
         
     cmd = [claude_cmd, '--print']
     if skip_permissions:
@@ -486,6 +554,10 @@ def load_prompts_from_xml(role):
 
 def main():
     """Main function to run Claude with a prompt and print the response."""
+    logger = setup_logger('cc_enhancer.claude')
+    logger.info("run_claude.py started")
+    logger.info(f"Arguments: {sys.argv}")
+    
     # Default values
     prompt = "tell me about this project"
     skip_permissions = False
@@ -534,6 +606,7 @@ def main():
     print("Waiting for Claude's response...")
     
     # Run Claude based on platform
+    logger.info(f"Running on platform: {platform.system()}")
     if platform.system() == "Windows":
         output, code = run_claude_windows(prompt, skip_permissions)
     else:
@@ -545,10 +618,13 @@ def main():
         print("="*60)
         print(output)
         print("="*60)
+        logger.info("Claude execution completed successfully")
     else:
         print(f"\nClaude failed with return code: {code}")
+        logger.error(f"Claude execution failed with code: {code}")
         if output:
             print(f"Output: {output}")
+            logger.error(f"Error output: {output[:500]}")
         if code == -1:
             print("Timeout occurred - Claude took too long to respond")
         elif code == -2:
@@ -566,6 +642,7 @@ def main():
                 print("   or: python run_claude.py <prompt>")
     
     # Exit with appropriate code
+    logger.info(f"run_claude.py exiting with code: {code if code >= 0 else 1}")
     sys.exit(code if code >= 0 else 1)
 
 

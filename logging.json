@@ -1,0 +1,49 @@
+{
+  "enabled": true,
+  "logLevel": "INFO",
+  "features": {
+    "CODE_ANALYSIS": true,
+    "CODE_GENERATION": true,
+    "CODE_REFACTORING": true,
+    "FILE_OPERATIONS": true,
+    "GIT_OPERATIONS": true,
+    "PROJECT_MANAGEMENT": true,
+    "DEPENDENCY_MANAGEMENT": true,
+    "TESTING": true,
+    "LINTING": true,
+    "FORMATTING": true,
+    "DOCUMENTATION": true,
+    "PERFORMANCE": true,
+    "SECURITY": true,
+    "ERROR_HANDLING": true,
+    "DEBUG": false,
+    "MONITORING": true,
+    "CONFIGURATION": true
+  },
+  "modules": {
+    "ANALYZERS": true,
+    "GENERATORS": true,
+    "TRANSFORMERS": true,
+    "PARSERS": true,
+    "VALIDATORS": true,
+    "FORMATTERS": true,
+    "UTILS": true,
+    "SERVICES": true,
+    "HANDLERS": true,
+    "REPOSITORIES": true,
+    "MODELS": true,
+    "TESTS": true,
+    "TOOLS": true,
+    "SCRIPTS": true,
+    "CONFIGS": true
+  },
+  "output": {
+    "format": "json",
+    "destination": "./logs",
+    "rotation": {
+      "enabled": true,
+      "maxSize": "10MB",
+      "maxFiles": 5
+    }
+  }
+}

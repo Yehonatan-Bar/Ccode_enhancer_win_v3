@@ -1,0 +1,799 @@
+Claude session started at: 2025-07-16 16:08:38
+Prompt: Analyze the code for potential security vulnerabilities, including but not limited to: input validation, authentication bypasses, injection attacks, and data exposure. Suggest security improvements where needed.i imlement new updates to the code, are they good?
+
+# Git Diff from Last Commit:
+diff --git a/claude_output_20250716_145015.txt b/claude_output_20250716_145015.txt
+deleted file mode 100644
+index 35a500c..0000000
+--- a/claude_output_20250716_145015.txt
++++ /dev/null
+@@ -1,9 +0,0 @@
+-Claude session started at: 2025-07-16 14:50:15
+-Prompt: add an empty test1.txt file to this project
+-================================================================================
+-
+-Created empty test1.txt file.
+-
+-================================================================================
+-Claude session ended at: 2025-07-16 14:50:27
+-Return code: 0
+diff --git a/claude_output_20250716_145708.txt b/claude_output_20250716_145708.txt
+deleted file mode 100644
+index 9471f12..0000000
+--- a/claude_output_20250716_145708.txt
++++ /dev/null
+@@ -1,25 +0,0 @@
+-Claude session started at: 2025-07-16 14:57:08
+-Prompt: lOkk at my snake game, is it safe to run?
+-================================================================================
+-
+-Yes, your snake game is safe to run. The code is clean and contains only standard game functionality:
+-
+-**Safe elements:**
+-- Uses legitimate `pygame` library for graphics
+-- Standard game mechanics (snake movement, food spawning, collision detection)
+-- No network connections or file operations
+-- No system calls or dangerous imports
+-- Clean exit handling with `pygame.quit()` and `sys.exit()`
+-
+-**Security analysis:**
+-- No malicious code patterns detected
+-- Only imports `pygame`, `random`, and `sys` (all safe)
+-- No file I/O operations
+-- No subprocess calls or shell commands
+-- No network requests
+-
+-The game is a straightforward implementation of the classic Snake game with proper bounds checking and collision detection. It's safe to run on your system.
+-
+-================================================================================
+-Claude session ended at: 2025-07-16 14:57:35
+-Return code: 0
+diff --git a/claude_output_20250716_150707.txt b/claude_output_20250716_150707.txt
+deleted file mode 100644
+index e6db267..0000000
+--- a/claude_output_20250716_150707.txt
++++ /dev/null
+@@ -1,9 +0,0 @@
+-Claude session started at: 2025-07-16 15:07:07
+-Prompt: Review the changes I made and tell me whether I handled all error scenarios at the highest standard. If not, what should be improved?
+-================================================================================
+-
+-The error handling is **below professional standards** and needs substantial improvement in resource management, exception specificity, and input validation.
+-
+-================================================================================
+-Claude session ended at: 2025-07-16 15:08:14
+-Return code: 0
+diff --git a/claude_output_20250716_150832.txt b/claude_output_20250716_150832.txt
+deleted file mode 100644
+index af98d0e..0000000
+--- a/claude_output_20250716_150832.txt
++++ /dev/null
+@@ -1,90 +0,0 @@
+-Claude session started at: 2025-07-16 15:08:32
+-Prompt: Assess code readability, maintainability, and adherence to best practices. Check for proper naming conventions, code structure, documentation, and design patterns. Identify areas that need refactoring...
+-================================================================================
+-
+-## Code Quality Assessment
+-
+-Based on my analysis of the codebase, here's a comprehensive assessment of code readability, maintainability, and adherence to best practices:
+-
+-### **Overall Structure**
+-The project consists of 5 main Python files focused on Claude CLI interaction and a simple Snake game:
+-- `run_claude.py` - Main CLI wrapper (573 lines)
+-- `run_roles.py` - Role-based prompt execution (102 lines)
+-- `run_command.py` - Simple command runner (15 lines)
+-- `git_diff_last_commit.py` - Git diff utility (92 lines)
+-- `snake.py` - Snake game implementation (112 lines)
+-
+-### **Strengths**
+-
+-1. **Documentation**: Good docstrings throughout, especially in `run_claude.py:20-21`, `run_claude.py:52-53`
+-2. **Error Handling**: Comprehensive error handling with specific error codes and user-friendly messages
+-3. **Cross-platform Support**: Well-implemented Windows/Unix compatibility in `run_claude.py:144-442`
+-4. **Modular Design**: Clear separation of concerns between files
+-5. **Configuration Management**: XML-based prompt library system for role-based execution
+-
+-### **Areas Requiring Improvement**
+-
+-#### **1. Code Structure & Organization**
+-- **Long Functions**: `run_claude_windows()` (run_claude.py:144-308) and `run_claude_unix()` (run_claude.py:310-442) are nearly identical with 160+ lines each
+-- **Code Duplication**: 80% code overlap between Windows and Unix implementations
+-- **Complex Logic**: Threading, queue management, and process handling all mixed in single functions
+-
+-#### **2. Naming Conventions**
+-- **Inconsistent**: `run_claude_windows()` vs `get_git_diff()` (inconsistent verb patterns)
+-- **Generic Names**: `output_lines`, `output_queue` don't indicate their specific purpose
+-- **Unclear Variables**: `use_stdin`, `use_shell` could be more descriptive
+-
+-#### **3. Design Patterns**
+-- **Missing Abstraction**: No base class for platform-specific implementations
+-- **No Strategy Pattern**: Platform detection scattered throughout code
+-- **Tight Coupling**: Process management, logging, and output handling not separated
+-
+-#### **4. Maintainability Issues**
+-- **Magic Numbers**: Hardcoded values like `4000` (prompt length), `300` (timeout), `10` (game speed)
+-- **Hardcoded Paths**: Git Bash paths in `run_claude.py:71-76` not configurable
+-- **No Configuration**: Settings scattered throughout code instead of centralized config
+-
+-#### **5. Error Handling Gaps**
+-- **Silent Failures**: Exception handling with bare `except:` clauses (run_claude.py:231-232)
+-- **Inconsistent Error Codes**: Mix of positive, negative, and zero return codes
+-- **Missing Validation**: No input validation for XML parsing or command arguments
+-
+-### **Specific Refactoring Recommendations**
+-
+-1. **Extract Common Process Management**:
+-   ```python
+-   class ClaudeProcessManager:
+-       def __init__(self, platform_strategy):
+-           self.strategy = platform_strategy
+-   ```
+-
+-2. **Create Platform Strategy Pattern**:
+-   ```python
+-   class WindowsClaudeStrategy(ClaudeStrategy):
+-       def build_command(self, cmd, use_shell): ...
+-   ```
+-
+-3. **Centralize Configuration**:
+-   ```python
+-   class ClaudeConfig:
+-       TIMEOUT = 300
+-       PROMPT_LENGTH_LIMIT = 4000
+-       GIT_BASH_PATHS = [...]
+-   ```
+-
+-4. **Improve Error Handling**:
+-   ```python
+-   class ClaudeError(Exception):
+-       def __init__(self, code, message): ...
+-   ```
+-
+-### **Code Quality Score: 6/10**
+-
+-**Strengths**: Good documentation, comprehensive error handling, cross-platform support  
+-**Weaknesses**: Code duplication, long functions, missing design patterns, hardcoded values
+-
+-The code is functional but requires significant refactoring to improve maintainability and follow modern Python best practices.
+-
+-================================================================================
+-Claude session ended at: 2025-07-16 15:09:35
+-Return code: 0
+diff --git a/claude_output_20250716_154422.txt b/claude_output_20250716_154422.txt
+new file mode 100644
+index 0000000..7714792
+--- /dev/null
++++ b/claude_output_20250716_154422.txt
+@@ -0,0 +1,34 @@
++Claude session started at: 2025-07-16 15:44:23
++Prompt: Review the changes I made and tell me whether I handled all error scenarios at the highest standard. If not, what should be improved?
++
++# Git Diff from Last Commit:
++diff --git a/snake.py b/snake.py
++ind...
++================================================================================
++
++Good error handling improvements! However, several critical scenarios are missing:
++
++**Missing Error Scenarios:**
++1. **Food fallback failure**: Line 86-91 doesn't handle the case where ALL grid positions are occupied by snake (impossible to place food)
++2. **Clock initialization**: Line 33 lacks error handling for `pygame.time.Clock()`
++3. **Event processing**: Lines 134-146 don't handle potential pygame event errors
++4. **Drawing operations**: Lines 158-174 pygame.draw calls aren't wrapped in try-catch
++5. **Screen display**: Line 173 `pygame.display.flip()` could fail
++
++**Additional Issues:**
++- Line 108: `pygame.display.flip()` in game_over_screen isn't error-handled
++- Line 194: Empty except clause could mask important errors
++- No validation for grid dimensions (WIDTH/HEIGHT could be invalid)
++
++**Recommendations:**
++- Add try-catch around all pygame drawing operations
++- Handle the theoretical case where no food position exists
++- Replace bare `except:` with specific exception handling
++- Add validation for game constants
++- Consider adding timeout to event loops to prevent infinite blocking
++
++Your foundation is solid with logging and graceful exits, but these additions would achieve the highest error handling standard.
++
++================================================================================
++Claude session ended at: 2025-07-16 15:44:41
++Return code: 0
+diff --git a/claude_output_20250716_154449.txt b/claude_output_20250716_154449.txt
+new file mode 100644
+index 0000000..af4e597
+--- /dev/null
++++ b/claude_output_20250716_154449.txt
+@@ -0,0 +1,9 @@
++Claude session started at: 2025-07-16 15:44:50
++Prompt: Assess code readability, maintainability, and adherence to best practices. Check for proper naming conventions, code structure, documentation, and design patterns. Identify areas that need refactoring...
++================================================================================
++
++The code shows significant improvement in error handling and robustness, but needs structural refactoring to improve maintainability and testability. The main issues are global state management and a monolithic main function that handles too many responsibilities.
++
++================================================================================
++Claude session ended at: 2025-07-16 15:45:42
++Return code: 0
+diff --git a/claude_output_20250716_154857.txt b/claude_output_20250716_154857.txt
+new file mode 100644
+index 0000000..e44c009
+--- /dev/null
++++ b/claude_output_20250716_154857.txt
+@@ -0,0 +1,245 @@
++Claude session started at: 2025-07-16 15:48:59
++Prompt: Review the changes I made and tell me whether I handled all error scenarios at the highest standard. If not, what should be improved?
++
++# Git Diff from Last Commit:
++diff --git a/snake.py b/snake.py
++index 99ec416..9adfd76 100644
++--- a/snake.py
+++++ b/snake.py
++@@ -1,8 +1,15 @@
++ import pygame
++ import random
++ import sys
+++import logging
++ 
++-pygame.init()
+++logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+++
+++try:
+++    pygame.init()
+++except pygame.error as e:
+++    logging.error(f"Failed to initialize pygame: {e}")
+++    sys.exit(1)
++ 
++ WIDTH = 600
++ HEIGHT = 600
++@@ -15,8 +22,14 @@ WHITE = (255, 255, 255)
++ RED = (255, 0, 0)
++ GREEN = (0, 255, 0)
++ 
++-screen = pygame.display.set_mode((WIDTH, HEIGHT))
++-pygame.display.set_caption("Snake Game")
+++try:
+++    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+++    pygame.display.set_caption("Snake Game")
+++except pygame.error as e:
+++    logging.error(f"Failed to create display: {e}")
+++    pygame.quit()
+++    sys.exit(1)
+++    
++ clock = pygame.time.Clock()
++ 
++ class Snake:
++@@ -56,57 +69,128 @@ class Food:
++         self.position = None
++         self.randomize_position()
++         
++-    def randomize_position(self):
++-        self.position = (random.randint(0, GRID_WIDTH-1), 
++-                        random.randint(0, GRID_HEIGHT-1))
+++    def randomize_position(self, snake_positions=None):
+++        max_attempts = 100
+++        attempts = 0
+++        
+++        while attempts < max_attempts:
+++            new_position = (random.randint(0, GRID_WIDTH-1), 
+++                           random.randint(0, GRID_HEIGHT-1))
+++            
+++            if snake_positions is None or new_position not in snake_positions:
+++                self.position = new_position
+++                return
+++            
+++            attempts += 1
+++        
+++        logging.warning("Could not find valid food position after {} attempts".format(max_attempts))
+++        for x in range(GRID_WIDTH):
+++            for y in range(GRID_HEIGHT):
+++                if snake_positions is None or (x, y) not in snake_positions:
+++                    self.position = (x, y)
+++                    return
++ 
++-def main():
++-    snake = Snake()
++-    food = Food()
++-    running = True
++-    score = 0
+++def draw_text(surface, text, size, color, x, y):
+++    try:
+++        font = pygame.font.Font(None, size)
+++        text_surface = font.render(text, True, color)
+++        text_rect = text_surface.get_rect()
+++        text_rect.center = (x, y)
+++        surface.blit(text_surface, text_rect)
+++    except pygame.error as e:
+++        logging.error(f"Failed to render text: {e}")
+++
+++def game_over_screen(screen, score):
+++    screen.fill(BLACK)
+++    draw_text(screen, f"Game Over! Score: {score}", 40, WHITE, WIDTH//2, HEIGHT//2 - 50)
+++    draw_text(screen, "Press SPACE to play again", 30, WHITE, WIDTH//2, HEIGHT//2 + 10)
+++    draw_text(screen, "Press ESC to quit", 30, WHITE, WIDTH//2, HEIGHT//2 + 50)
+++    pygame.display.flip()
++     
++-    while running:
+++    waiting = True
+++    while waiting:
++         for event in pygame.event.get():
++             if event.type == pygame.QUIT:
++-                running = False
+++                return False
++             elif event.type == pygame.KEYDOWN:
++-                if event.key == pygame.K_UP:
++-                    snake.change_direction((0, -1))
++-                elif event.key == pygame.K_DOWN:
++-                    snake.change_direction((0, 1))
++-                elif event.key == pygame.K_LEFT:
++-                    snake.change_direction((-1, 0))
++-                elif event.key == pygame.K_RIGHT:
++-                    snake.change_direction((1, 0))
++-        
++-        if not snake.move():
++-            print(f"Game Over! Score: {score}")
++-            pygame.quit()
++-            sys.exit()
++-            
++-        if snake.positions[0] == food.position:
++-            snake.eat()
++-            food.randomize_position()
++-            score += 10
++-            
++-        screen.fill(BLACK)
++-        
++-        for position in snake.positions:
++-            rect = pygame.Rect(position[0] * CELL_SIZE, position[1] * CELL_SIZE,
++-                              CELL_SIZE, CELL_SIZE)
++-            pygame.draw.rect(screen, GREEN, rect)
++-            pygame.draw.rect(screen, BLACK, rect, 1)
++-            
++-        food_rect = pygame.Rect(food.position[0] * CELL_SIZE, 
++-                               food.position[1] * CELL_SIZE,
++-                               CELL_SIZE, CELL_SIZE)
++-        pygame.draw.rect(screen, RED, food_rect)
+++                if event.key == pygame.K_SPACE:
+++                    return True
+++                elif event.key == pygame.K_ESCAPE:
+++                    return False
+++    
+++    return False
+++
+++def main():
+++    play_again = True
+++    
+++    while play_again:
+++        snake = Snake()
+++        food = Food()
+++        running = True
+++        score = 0
++         
++-        pygame.display.flip()
++-        clock.tick(10)
+++        while running:
+++            try:
+++                for event in pygame.event.get():
+++                    if event.type == pygame.QUIT:
+++                        running = False
+++                        play_again = False
+++                    elif event.type == pygame.KEYDOWN:
+++                        if event.key == pygame.K_UP:
+++                            snake.change_direction((0, -1))
+++                        elif event.key == pygame.K_DOWN:
+++                            snake.change_direction((0, 1))
+++                        elif event.key == pygame.K_LEFT:
+++                            snake.change_direction((-1, 0))
+++                        elif event.key == pygame.K_RIGHT:
+++                            snake.change_direction((1, 0))
+++                
+++                if not snake.move():
+++                    play_again = game_over_screen(screen, score)
+++                    running = False
+++                    continue
+++                    
+++                if snake.positions[0] == food.position:
+++                    snake.eat()
+++                    food.randomize_position(snake.positions)
+++                    score += 10
+++                    
+++                screen.fill(BLACK)
+++                
+++                for position in snake.positions:
+++                    rect = pygame.Rect(position[0] * CELL_SIZE, position[1] * CELL_SIZE,
+++                                      CELL_SIZE, CELL_SIZE)
+++                    pygame.draw.rect(screen, GREEN, rect)
+++                    pygame.draw.rect(screen, BLACK, rect, 1)
+++                    
+++                food_rect = pygame.Rect(food.position[0] * CELL_SIZE, 
+++                                       food.position[1] * CELL_SIZE,
+++                                       CELL_SIZE, CELL_SIZE)
+++                pygame.draw.rect(screen, RED, food_rect)
+++                
+++                draw_text(screen, f"Score: {score}", 30, WHITE, WIDTH//2, 30)
+++                
+++                pygame.display.flip()
+++                clock.tick(10)
+++                
+++            except pygame.error as e:
+++                logging.error(f"Game loop error: {e}")
+++                running = False
+++                play_again = False
++         
++     pygame.quit()
+++    logging.info("Game terminated successfully")
++ 
++ if __name__ == "__main__":
++-    main()
++\ No newline at end of file
+++    try:
+++        main()
+++    except KeyboardInterrupt:
+++        logging.info("Game interrupted by user")
+++    except Exception as e:
+++        logging.error(f"Unexpected error: {e}")
+++    finally:
+++        try:
+++            pygame.quit()
+++        except:
+++            pass
+++        logging.info("Game shutdown complete")
++\ No newline at end of file
++
++================================================================================
++
++Your error handling is solid but has several areas for improvement to meet the highest standard:
++
++**Missing error scenarios:**
++
++1. **Food position edge case:** In `randomize_position:72-91`, if the grid is completely filled by snake, the fallback loop could hang or set `self.position = None`. Should handle this impossible scenario.
++
++2. **Pygame drawing operations:** No error handling for `pygame.draw.rect` calls at lines 163-169. Drawing can fail with invalid coordinates.
++
++3. **Clock timing:** No error handling for `clock.tick(10):174` which could fail on some systems.
++
++4. **Event system:** No validation of event data integrity before processing at lines 134-146.
++
++**Improvement recommendations:**
++
++1. **Add bounds checking** in drawing operations
++2. **Handle complete grid fill** scenario in food positioning 
++3. **Validate event data** before processing
++4. **Add resource cleanup** verification in finally block
++5. **Consider display.flip() failures** at line 173
++
++The current implementation handles most common failures well, but these edge cases could cause unexpected crashes in rare conditions.
++
++================================================================================
++Claude session ended at: 2025-07-16 15:49:17
++Return code: 0
+diff --git a/claude_output_20250716_154926.txt b/claude_output_20250716_154926.txt
+new file mode 100644
+index 0000000..62f0535
+--- /dev/null
++++ b/claude_output_20250716_154926.txt
+@@ -0,0 +1,225 @@
++Claude session started at: 2025-07-16 15:49:27
++Prompt: Assess code readability, maintainability, and adherence to best practices. Check for proper naming conventions, code structure, documentation, and design patterns. Identify areas that need refactoring.
++
++# Git Diff from Last Commit:
++diff --git a/snake.py b/snake.py
++index 99ec416..9adfd76 100644
++--- a/snake.py
+++++ b/snake.py
++@@ -1,8 +1,15 @@
++ import pygame
++ import random
++ import sys
+++import logging
++ 
++-pygame.init()
+++logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+++
+++try:
+++    pygame.init()
+++except pygame.error as e:
+++    logging.error(f"Failed to initialize pygame: {e}")
+++    sys.exit(1)
++ 
++ WIDTH = 600
++ HEIGHT = 600
++@@ -15,8 +22,14 @@ WHITE = (255, 255, 255)
++ RED = (255, 0, 0)
++ GREEN = (0, 255, 0)
++ 
++-screen = pygame.display.set_mode((WIDTH, HEIGHT))
++-pygame.display.set_caption("Snake Game")
+++try:
+++    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+++    pygame.display.set_caption("Snake Game")
+++except pygame.error as e:
+++    logging.error(f"Failed to create display: {e}")
+++    pygame.quit()
+++    sys.exit(1)
+++    
++ clock = pygame.time.Clock()
++ 
++ class Snake:
++@@ -56,57 +69,128 @@ class Food:
++         self.position = None
++         self.randomize_position()
++         
++-    def randomize_position(self):
++-        self.position = (random.randint(0, GRID_WIDTH-1), 
++-                        random.randint(0, GRID_HEIGHT-1))
+++    def randomize_position(self, snake_positions=None):
+++        max_attempts = 100
+++        attempts = 0
+++        
+++        while attempts < max_attempts:
+++            new_position = (random.randint(0, GRID_WIDTH-1), 
+++                           random.randint(0, GRID_HEIGHT-1))
+++            
+++            if snake_positions is None or new_position not in snake_positions:
+++                self.position = new_position
+++                return
+++            
+++            attempts += 1
+++        
+++        logging.warning("Could not find valid food position after {} attempts".format(max_attempts))
+++        for x in range(GRID_WIDTH):
+++            for y in range(GRID_HEIGHT):
+++                if snake_positions is None or (x, y) not in snake_positions:
+++                    self.position = (x, y)
+++                    return
++ 
++-def main():
++-    snake = Snake()
++-    food = Food()
++-    running = True
++-    score = 0
+++def draw_text(surface, text, size, color, x, y):
+++    try:
+++        font = pygame.font.Font(None, size)
+++        text_surface = font.render(text, True, color)
+++        text_rect = text_surface.get_rect()
+++        text_rect.center = (x, y)
+++        surface.blit(text_surface, text_rect)
+++    except pygame.error as e:
+++        logging.error(f"Failed to render text: {e}")
+++
+++def game_over_screen(screen, score):
+++    screen.fill(BLACK)
+++    draw_text(screen, f"Game Over! Score: {score}", 40, WHITE, WIDTH//2, HEIGHT//2 - 50)
+++    draw_text(screen, "Press SPACE to play again", 30, WHITE, WIDTH//2, HEIGHT//2 + 10)
+++    draw_text(screen, "Press ESC to quit", 30, WHITE, WIDTH//2, HEIGHT//2 + 50)
+++    pygame.display.flip()
++     
++-    while running:
+++    waiting = True
+++    while waiting:
++         for event in pygame.event.get():
++             if event.type == pygame.QUIT:
++-                running = False
+++                return False
++             elif event.type == pygame.KEYDOWN:
++-                if event.key == pygame.K_UP:
++-                    snake.change_direction((0, -1))
++-                elif event.key == pygame.K_DOWN:
++-                    snake.change_direction((0, 1))
++-                elif event.key == pygame.K_LEFT:
++-                    snake.change_direction((-1, 0))
++-                elif event.key == pygame.K_RIGHT:
++-                    snake.change_direction((1, 0))
++-        
++-        if not snake.move():
++-            print(f"Game Over! Score: {score}")
++-            pygame.quit()
++-            sys.exit()
++-            
++-        if snake.positions[0] == food.position:
++-            snake.eat()
++-            food.randomize_position()
++-            score += 10
++-            
++-        screen.fill(BLACK)
++-        
++-        for position in snake.positions:
++-            rect = pygame.Rect(position[0] * CELL_SIZE, position[1] * CELL_SIZE,
++-                              CELL_SIZE, CELL_SIZE)
++-            pygame.draw.rect(screen, GREEN, rect)
++-            pygame.draw.rect(screen, BLACK, rect, 1)
++-            
++-        food_rect = pygame.Rect(food.position[0] * CELL_SIZE, 
++-                               food.position[1] * CELL_SIZE,
++-                               CELL_SIZE, CELL_SIZE)
++-        pygame.draw.rect(screen, RED, food_rect)
+++                if event.key == pygame.K_SPACE:
+++                    return True
+++                elif event.key == pygame.K_ESCAPE:
+++                    return False
+++    
+++    return False
+++
+++def main():
+++    play_again = True
+++    
+++    while play_again:
+++        snake = Snake()
+++        food = Food()
+++        running = True
+++        score = 0
++         
++-        pygame.display.flip()
++-        clock.tick(10)
+++        while running:
+++            try:
+++                for event in pygame.event.get():
+++                    if event.type == pygame.QUIT:
+++                        running = False
+++                        play_again = False
+++                    elif event.type == pygame.KEYDOWN:
+++                        if event.key == pygame.K_UP:
+++                            snake.change_direction((0, -1))
+++                        elif event.key == pygame.K_DOWN:
+++                            snake.change_direction((0, 1))
+++                        elif event.key == pygame.K_LEFT:
+++                            snake.change_direction((-1, 0))
+++                        elif event.key == pygame.K_RIGHT:
+++                            snake.change_direction((1, 0))
+++                
+++                if not snake.move():
+++                    play_again = game_over_screen(screen, score)
+++                    running = False
+++                    continue
+++                    
+++                if snake.positions[0] == food.position:
+++                    snake.eat()
+++                    food.randomize_position(snake.positions)
+++                    score += 10
+++                    
+++                screen.fill(BLACK)
+++                
+++                for position in snake.positions:
+++                    rect = pygame.Rect(position[0] * CELL_SIZE, position[1] * CELL_SIZE,
+++                                      CELL_SIZE, CELL_SIZE)
+++                    pygame.draw.rect(screen, GREEN, rect)
+++                    pygame.draw.rect(screen, BLACK, rect, 1)
+++                    
+++                food_rect = pygame.Rect(food.position[0] * CELL_SIZE, 
+++                                       food.position[1] * CELL_SIZE,
+++                                       CELL_SIZE, CELL_SIZE)
+++                pygame.draw.rect(screen, RED, food_rect)
+++                
+++                draw_text(screen, f"Score: {score}", 30, WHITE, WIDTH//2, 30)
+++                
+++                pygame.display.flip()
+++                clock.tick(10)
+++                
+++            except pygame.error as e:
+++                logging.error(f"Game loop error: {e}")
+++                running = False
+++                play_again = False
++         
++     pygame.quit()
+++    logging.info("Game terminated successfully")
++ 
++ if __name__ == "__main__":
++-    main()
++\ No newline at end of file
+++    try:
+++        main()
+++    except KeyboardInterrupt:
+++        logging.info("Game interrupted by user")
+++    except Exception as e:
+++        logging.error(f"Unexpected error: {e}")
+++    finally:
+++        try:
+++            pygame.quit()
+++        except:
+++            pass
+++        logging.info("Game shutdown complete")
++\ No newline at end of file
++
++================================================================================
++
++**Overall Assessment**: Code is functional and well-structured but needs refactoring for better maintainability. The improvements made (logging, error handling, game over screen) are positive, but architectural improvements would enhance long-term maintainability.
++
++================================================================================
++Claude session ended at: 2025-07-16 15:50:21
++Return code: 0
+diff --git a/run_claude.py b/run_claude.py
+index 86773d5..9d37f94 100644
+--- a/run_claude.py
++++ b/run_claude.py
+@@ -217,7 +217,7 @@ def run_claude_windows(prompt, skip_permissions=False, timeout=300):
+         # Open log file for writing
+         log_file = open(log_path, 'w', encoding='utf-8')
+         log_file.write(f"Claude session started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+-        log_file.write(f"Prompt: {prompt[:200]}{'...' if len(prompt) > 200 else ''}\n")
++        log_file.write(f"Prompt: {prompt}\n")
+         log_file.write("=" * 80 + "\n\n")
+         log_file.flush()
+         
+@@ -352,7 +352,7 @@ def run_claude_unix(prompt, skip_permissions=False, timeout=300):
+         # Open log file for writing
+         log_file = open(log_path, 'w', encoding='utf-8')
+         log_file.write(f"Claude session started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+-        log_file.write(f"Prompt: {prompt[:200]}{'...' if len(prompt) > 200 else ''}\n")
++        log_file.write(f"Prompt: {prompt}\n")
+         log_file.write("=" * 80 + "\n\n")
+         log_file.flush()
+         
+diff --git a/run_roles.py b/run_roles.py
+index 170ed40..0077f5c 100644
+--- a/run_roles.py
++++ b/run_roles.py
+@@ -3,6 +3,33 @@ import sys
+ import xml.etree.ElementTree as ET
+ import argparse
+ import time
++import os
++
++def get_git_diff_last_commit():
++    """Get the diff between the last commit and the previous one."""
++    try:
++        # Check if we're in a git repository
++        subprocess.run(['git', 'rev-parse', '--git-dir'], capture_output=True, check=True)
++        
++        # Get the diff between HEAD and HEAD~1
++        result = subprocess.run(
++            ['git', 'diff', 'HEAD~1', 'HEAD'],
++            capture_output=True,
++            text=True,
++            check=False
++        )
++        
++        if result.returncode == 0 and result.stdout:
++            return f"\n\n# Git Diff from Last Commit:\n{result.stdout}"
++        elif "ambiguous argument 'HEAD~1'" in result.stderr:
++            return "\n\n# Git Diff: This appears to be the first commit (no previous commit exists)."
++        else:
++            return ""
++            
++    except (subprocess.CalledProcessError, FileNotFoundError):
++        return ""
++    except Exception:
++        return ""
+ 
+ def parse_prompt_library(xml_file):
+     """Parse the prompt library XML and extract role prompts."""
+@@ -23,7 +50,13 @@ def parse_prompt_library(xml_file):
+ 
+ def run_claude_with_role(role_prompt):
+     """Run the claude command with the given role prompt."""
+-    command = ['python', 'run_claude.py', role_prompt, '--dangerously-skip-permissions']
++    # Get git diff from last commit
++    git_diff = get_git_diff_last_commit()
++    
++    # Append git diff to the role prompt
++    enhanced_prompt = role_prompt + git_diff
++    
++    command = ['python', 'run_claude.py', enhanced_prompt, '--dangerously-skip-permissions']
+     
+     try:
+         print(f"\n{'='*60}")
+@@ -81,9 +114,17 @@ def main():
+     for i, role in enumerate(args.roles):
+         print(f"\n{'#'*60}")
+         print(f"# Role {i+1}/{len(args.roles)}: {role}")
+-        print(f"# Prompt: {role_prompts[role][:50]}...")
+         print(f"{'#'*60}")
+         
++        # Get the git diff to show what will be included
++        git_diff = get_git_diff_last_commit()
++        full_prompt = role_prompts[role] + git_diff
++        
++        print(f"\n## Full prompt being sent to Claude:")
++        print(f"{'-'*60}")
++        print(full_prompt)
++        print(f"{'-'*60}\n")
++        
+         success = run_claude_with_role(role_prompts[role])
+         
+         if not success:
+
+================================================================================
+
+Execution error
+================================================================================
+Claude session ended at: 2025-07-16 16:09:51
+Return code: 0

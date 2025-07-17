@@ -1,0 +1,17 @@
+{
+  "total_logs": 4,
+  "by_level": {
+    "INFO": 3,
+    "ERROR": 1
+  },
+  "by_feature": {
+    "BROWSER_AUTOMATION": 2,
+    "ERROR_HANDLING": 1,
+    "AUTH": 1
+  },
+  "by_module": {
+    "BROWSER_MANAGER": 2,
+    "HANDLERS": 1,
+    "SERVICES": 1
+  }
+}

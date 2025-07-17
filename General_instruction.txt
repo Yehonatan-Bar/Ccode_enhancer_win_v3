@@ -1,0 +1,33 @@
+
+1. Before you start, read  README.md and  project_structure.json to stay ancored to the existing code structure style conventions etc. 
+
+2. The folder structure and the design of the project are intended to be highly modular and easy to maintain.
+
+Logs workflow:
+3.1 Before starting work, choose the commit name.
+3.2 Make sure to add all the necessary tags to the logs, including the commit.
+3.3 Toggle the relevant logs in @logging.json
+3.4 After completing the task and toggling the relevant tags, restart the server and check the app.log file in the logs folder to verify that everything looks correct
+3.5 in the summery, tell the user the commit name you chose. 
+
+4. Remember! You must update README.md and  project_structure.json after each step!
+
+5. If you need information about anything in the system, read the file MD_files\CONTENTS.md it will direct you to the relevant documentation
+
+6. The to-do list must always end with:
+     ☐ Update logging configuration for [commit name]
+     ☐ Run the server and check the app.log file to make sure everything is working properly.
+     ☐ Update project documentation (README.md and project_structure.json)
+
+6. When working on code (new or existing), replace any console.log statements with appropriate logger calls:
+   - Use logger.info(), logger.error(), logger.warn(), or logger.debug()
+   - Include appropriate feature and module tags
+   - This ensures all logs are captured in app.log and follow the logging configuration
+
+7. Use plan mode
+
+8. If relevant, Shut down the server, start it up again, and read the new log file in the logs folder.
+
+9. use plan mode
+
+Note! Think hard, think deep, Reason thoughtfully and thoroughly, Engage in wise and comprehensive reasoning.

@@ -1,0 +1,426 @@
+{
+  "project_name": "Claude Code Enhancer Windows v3",
+  "description": "A comprehensive web automation and browser analysis toolkit with Claude AI integration for Windows environments",
+  "version": "3.0",
+  "last_updated": "2025-01-16",
+  "directory_structure": {
+    "root": {
+      "path": "C:\\dev\\Ccode_enhancer_win_v3",
+      "files": {
+        "run_claude.py": {
+          "type": "python_script",
+          "description": "Main script to run Claude AI with Windows environment setup and role-based prompting",
+          "functions": [
+            "validate_claude_installation()",
+            "setup_claude_environment()",
+            "get_claude_command()",
+            "create_log_file()",
+            "run_claude_windows(prompt, skip_permissions, timeout)",
+            "run_claude_unix(prompt, skip_permissions, timeout)",
+            "get_git_diff()",
+            "load_prompts_from_xml(role)",
+            "main()"
+          ],
+          "dependencies": ["subprocess", "sys", "os", "platform", "pathlib", "xml.etree.ElementTree", "threading", "queue", "time", "datetime"]
+        },
+        "run_roles.py": {
+          "type": "python_script", 
+          "description": "Script to run Claude with multiple role-based prompts sequentially",
+          "functions": [
+            "get_git_diff_last_commit()",
+            "parse_prompt_library(xml_file)",
+            "run_claude_with_role(role_prompt, additional_prompt)",
+            "main()"
+          ],
+          "dependencies": ["subprocess", "sys", "xml.etree.ElementTree", "argparse", "time", "os"]
+        },
+        "snake.py": {
+          "type": "python_game",
+          "description": "Classic Snake game implementation using Pygame with logging and error handling",
+          "classes": [
+            {
+              "name": "Snake",
+              "methods": ["__init__()", "move()", "change_direction(direction)", "eat()"]
+            },
+            {
+              "name": "Food", 
+              "methods": ["__init__()", "randomize_position(snake_positions)"]
+            }
+          ],
+          "functions": [
+            "draw_text(surface, text, size, color, x, y)",
+            "game_over_screen(screen, score)",
+            "main()"
+          ],
+          "dependencies": ["pygame", "random", "sys", "logging"]
+        },
+        "git_diff_last_commit.py": {
+          "type": "python_script",
+          "description": "Utility to show differences between the last commit and previous one",
+          "functions": [
+            "get_git_diff()",
+            "get_commit_info()",
+            "main()"
+          ],
+          "dependencies": ["subprocess", "sys"]
+        },
+        "prompt_library.xml": {
+          "type": "xml_config",
+          "description": "XML configuration file containing Claude AI prompts and role definitions",
+          "roles": [
+            "error handling",
+            "security review", 
+            "performance review",
+            "code quality",
+            "testing coverage",
+            "dependency audit",
+            "api design",
+            "logging monitoring",
+            "data validation",
+            "concurrency review",
+            "deployment readiness",
+            "accessibility compliance"
+          ]
+        },
+        "General_instruction.txt": {
+          "type": "documentation",
+          "description": "Project instructions and workflow guidelines for development practices"
+        }
+      },
+      "directories": {
+        "archive": {
+          "path": "archive\\",
+          "description": "Archive directory containing backup files and historical outputs",
+          "files": [
+            "claude_output_*.txt",
+            "run_claude_windows.bat",
+            "run_command.py"
+          ]
+        },
+        "logs": {
+          "path": "logs\\",
+          "description": "Directory for application logs and debug output"
+        },
+        "readmes": {
+          "path": "readmes\\",
+          "description": "Documentation directory",
+          "files": [
+            "LOGGING_SYSTEM.md"
+          ]
+        },
+        "utils": {
+          "path": "utils\\",
+          "description": "Utility modules for browser automation, web analysis, and image processing",
+          "subdirectories": {
+            "browser_handler": {
+              "description": "Core browser management and automation utilities",
+              "modules": {
+                "browser_manager.py": {
+                  "classes": [
+                    {
+                      "name": "BrowserManager",
+                      "methods": [
+                        "__init__(debug_port, headless)",
+                        "start_chrome_debugging()",
+                        "setup_selenium_driver()",
+                        "find_browser_window(url)",
+                        "focus_window(window_handle)"
+                      ]
+                    }
+                  ]
+                },
+                "js_fetcher.py": {
+                  "classes": [
+                    {
+                      "name": "JSFetcher",
+                      "methods": [
+                        "__init__(window_handle, base_url)",
+                        "fetch_js_files(js_urls)"
+                      ]
+                    }
+                  ],
+                  "functions": ["js_fetcher(window_handle, base_url, js_urls)"]
+                },
+                "main_page_inspector.py": {
+                  "classes": [
+                    {
+                      "name": "URLProcessor",
+                      "methods": [
+                        "__init__(screenshot_dir)",
+                        "analyze_url(url, wait_time)",
+                        "process_network_logs(driver)",
+                        "get_js_files(driver)"
+                      ]
+                    }
+                  ],
+                  "functions": ["main_page_inspector(url, wait_time)"]
+                },
+                "network_analyzer.py": {
+                  "classes": [
+                    {
+                      "name": "RequestAnalyzer",
+                      "methods": [
+                        "__init__(log_dir)",
+                        "setup_logging(log_dir)",
+                        "load_json_file(file_path)",
+                        "filter_network_calls(data, methods, extensions)",
+                        "fetch_url_content(url, headers, method, data)",
+                        "analyze_requests(json_file, methods, extensions, max_requests)"
+                      ]
+                    }
+                  ],
+                  "functions": ["network_analyzer(json_file_path)"]
+                },
+                "network_reader.py": {
+                  "classes": [
+                    {
+                      "name": "NetworkAnalyzer",
+                      "methods": [
+                        "__init__(headless)",
+                        "setup_logging()",
+                        "start_browser()",
+                        "process_network_logs()",
+                        "analyze_url(url)"
+                      ]
+                    }
+                  ],
+                  "functions": [
+                    "network_reader(url)",
+                    "setup_logging_directory()"
+                  ]
+                },
+                "screenshot_handler.py": {
+                  "classes": [
+                    {
+                      "name": "ScreenshotHandler",
+                      "methods": [
+                        "__init__(screenshot_dir)",
+                        "capture_screenshot(window_handle, inspector_results)",
+                        "screenshot_handler(inspector_results)"
+                      ]
+                    }
+                  ],
+                  "functions": ["take_screenshot(window_handle, screenshot_dir)"]
+                },
+                "url_analyzer.py": {
+                  "functions": [
+                    "url_analyzer(url, wait_time)",
+                    "capture_screenshot(window_handle)"
+                  ]
+                },
+                "vision_processor.py": {
+                  "classes": [
+                    {
+                      "name": "VisionProcessor",
+                      "methods": [
+                        "__init__(api_key)",
+                        "_encode_image(image_path)",
+                        "process_image(image_path, prompt, question, is_url, temperature, max_tokens)"
+                      ]
+                    }
+                  ],
+                  "functions": ["process_image_with_vision(image_path, prompt, question, is_url, api_key)"]
+                }
+              }
+            },
+            "browser_debbuger": {
+              "description": "Browser debugging and console logging utilities",
+              "modules": {
+                "console_logger.py": {
+                  "functions": [
+                    "get_chrome_path()",
+                    "console_logger(url, kill_existing)"
+                  ]
+                },
+                "detailed_url_analyzer.py": {
+                  "classes": [
+                    {
+                      "name": "DetailedURLAnalyzer",
+                      "methods": [
+                        "__init__(output_dir)",
+                        "_ensure_valid_url(url)",
+                        "analyze_url(url, wait_time)",
+                        "_collect_basic_info(url, load_time, timestamp)",
+                        "_analyze_resources()",
+                        "_analyze_network_traffic()",
+                        "_analyze_security()",
+                        "_analyze_performance()",
+                        "_extract_metadata()",
+                        "_save_results(results, timestamp)",
+                        "_analyze_page_interactivity()",
+                        "_analyze_performance_metrics()"
+                      ]
+                    }
+                  ],
+                  "functions": ["detailed_url_analyzer(url)"]
+                },
+                "fetch_resource_details.py": {
+                  "functions": ["get_resource_details(page_url, resource_url)"]
+                },
+                "get_page_resources.py": {
+                  "functions": ["get_page_resources(url)"]
+                }
+              }
+            },
+            "click_html_element": {
+              "description": "HTML element interaction and clicking utilities",
+              "modules": {
+                "browser_opener.py": {
+                  "functions": ["browser_opener(url, target_element_selector, keep_browser_open, wait_timeout, check_visibility)"]
+                },
+                "click_html_element.py": {
+                  "functions": ["click_element(url, is_first_click, prompt)"]
+                },
+                "clickable_elements_extractor.py": {
+                  "functions": [
+                    "log_large_message(logger, message, level, prefix)",
+                    "extract_clickable_elements(html, display_info, all_links)"
+                  ]
+                },
+                "element_clicker.py": {
+                  "functions": ["element_clicker(driver, selector)"]
+                },
+                "element_identifier.py": {
+                  "functions": ["construct_element_identifier_prompt(html, prompt, screenshot_path, display_info, all_links)"]
+                },
+                "screenshot_taker.py": {
+                  "functions": ["take_screenshot(display_info, driver, is_before)"]
+                }
+              }
+            },
+            "click_on_elemnt": {
+              "description": "Alternative element clicking implementation with window management",
+              "modules": {
+                "bring_to_front_and_screenshot.py": {
+                  "functions": [
+                    "setup_logging_directory()",
+                    "setup_logger(name, log_file, level, fmt, console_out)",
+                    "bring_to_front_and_screenshot(url)"
+                  ]
+                },
+                "click_element.py": {
+                  "functions": ["click_element(element_id, url, timeout)"]
+                },
+                "get_element_desc.py": {
+                  "functions": ["get_element_desc(screenshot_path, textual_description, request_full_description, logger)"]
+                },
+                "get_element_id.py": {
+                  "functions": ["get_element_id(element_description, html_content, custom_prompt)"]
+                },
+                "navigate_and_screenshot.py": {
+                  "functions": [
+                    "setup_logging_directory()",
+                    "setup_logger(name, log_file, level, fmt, console_out)",
+                    "navigate_and_screenshot(url)"
+                  ]
+                },
+                "open_browser_and_get_handle.py": {
+                  "functions": [
+                    "setup_logging_directory()",
+                    "setup_logger(name, log_file, level, fmt, console_out)",
+                    "find_browser_window(process_id, logger)",
+                    "open_browser_and_get_handle(url, logger)",
+                    "_get_all_process_info()",
+                    "_get_hwnd_for_pids(pids, logger)"
+                  ]
+                }
+              }
+            },
+            "vision_processor": {
+              "description": "Image processing and vision analysis utilities",
+              "modules": {
+                "vision_processor.py": {
+                  "functions": [
+                    "_encode_image(image_path)",
+                    "vision_processor(image_path, prompt, question, is_url, api_key, temperature, max_tokens)"
+                  ]
+                }
+              }
+            }
+          },
+          "standalone_files": {
+            "get_monitors_detailes.py": {
+              "functions": ["get_display_info()"],
+              "description": "Utility to retrieve information about connected monitors"
+            },
+            "image_compressor.py": {
+              "functions": ["compress_images(image_paths, output_path)"],
+              "description": "Image compression utility for creating zip archives"
+            },
+            "browser_launcher.py": {
+              "classes": [
+                {
+                  "name": "BrowserLauncher",
+                  "methods": [
+                    "__init__(debug_port)",
+                    "launch_browser_with_url(url, clear_data)",
+                    "_start_chrome_debugging()",
+                    "_setup_selenium_driver()",
+                    "_clear_browser_data()",
+                    "_extract_browser_data()",
+                    "_generate_element_selectors(element)",
+                    "_get_xpath(element)",
+                    "_get_parent_info(element)",
+                    "_check_page_ready()",
+                    "_analyze_page_structure()",
+                    "_extract_forms()",
+                    "_extract_navigation_elements()",
+                    "close()"
+                  ]
+                }
+              ],
+              "functions": ["main()"],
+              "description": "Enhanced browser launcher with comprehensive navigation data extraction, multiple selector strategies, and page structure analysis"
+            }
+          }
+        }
+      }
+    }
+  },
+  "key_dependencies": {
+    "python_packages": [
+      "selenium",
+      "beautifulsoup4",
+      "requests", 
+      "pygame",
+      "pyautogui",
+      "mss",
+      "groq",
+      "screeninfo",
+      "webdriver-manager",
+      "websocket-client"
+    ],
+    "windows_apis": [
+      "win32gui",
+      "win32con", 
+      "win32process"
+    ],
+    "external_tools": [
+      "Google Chrome",
+      "Git",
+      "Claude AI CLI",
+      "Git Bash"
+    ]
+  },
+  "main_features": [
+    "Claude AI integration with role-based prompting",
+    "Browser automation and control",
+    "Web page analysis and resource extraction",
+    "Network traffic monitoring and analysis",
+    "HTML element identification and interaction",
+    "Screenshot capture and management",
+    "Vision processing with AI models",
+    "Comprehensive logging and debugging",
+    "Git integration for change tracking",
+    "Cross-platform support (Windows focus)"
+  ],
+  "architecture_patterns": [
+    "Modular utility design",
+    "Class-based component organization", 
+    "Comprehensive error handling",
+    "Extensive logging throughout",
+    "Configuration-driven behavior",
+    "Separation of concerns",
+    "Plugin-style architecture for utilities"
+  ]
+}

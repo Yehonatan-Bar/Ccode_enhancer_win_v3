@@ -1,44 +1,12 @@
 import pygame
 import random
 import sys
-import logging
-import json
-import os
 
 
-# Setup logging based on configuration
-def setup_logging():
-    try:
-        # Read logging configuration
-        with open('logging.json', 'r') as't exist
-        log_dir = log_config.get('output', {}).get('destination', './logs')
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        
-            level=log_level,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(log_file),
-                logging.StreamHandler()
-            ]
-        )
-        
-        return logging.getLogger('snake_game')
-    except Exception as e:
-        # Fallback if configuration fails
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger('snake_game')
-        logger.error(f"Failed to load logging configuration: {e}")
-
-# Initialize logger
-logger = setup_logging()
-
-# Initialize pygaadd-error-handling-snake-game] Pygame initialized successfully")
+try:
+    pygame.init()
 except pygame.error as e:
-    logger.error(f"[COMMIT: add-error-handling-snake-game] Failed to initialize pygame: {e}")
-    sys.exit(1)
-except Exception as e:
-    logger.error(f"[COMMIT: add-error-handling-snake-game] Unexpected error during pygame initialization: {e}")
+    print(f"Failed to initialize pygame: {e}")
     sys.exit(1)
 
 WIDTH = 600
@@ -52,28 +20,10 @@ WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
-# Initialize display with error handling
-try:
-     = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Snake Game")
-    logger.info(f"[COMMIT: add-error-handling-snake-game] Display initialized: {WIDTH}x{HEIGHT}")
-except pygame.error as e:
-    logger.error(f"[COMMIT: add-error-handling-snake-game] Failed to create display: {e}")
-    pygame.quit()
-    sys.exit(1)
-except Exception as e:
-    logger.error(f"[COMMIT: add-error-handling-snake-game] Unexpected error creating display: {e}")
-    pygame.quit()
-    sys.exit(1)
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Snake Game")
     
-# Initialize clock with error handling
-try:
-    clock = pygame.time.Clock()
-    logger.info("[COMMIT: add-error-handling-snake-game] Clock initialized")
-except Exception as e:
-    logger.error(f"[COMMIT: add-error-handling-snake-game] Failed to create clock: {e}")
-    pygame.quit()
-    sys.exit(1)
+clock = pygame.time.Clock()
 
 class Snake:
     def __init__(self):
@@ -82,24 +32,23 @@ class Snake:
         self.grow = False
         
     def move(self):
-        try:
-            head = self.positions[0]
-            x, y = self.direction
-            new_head = (head[0] + x, head[1] + y)
-            
-            if new_head[0] < 0 or new_head[0] >= GRID_WIDTH or \
-               new_head[1] < 0 or new_head[1] >= GRID_HEIGHT or \
-               new_head in self.positions:
-                logger.debug(f"[COMMIT: add-error-handling-snake-game] Snake collision detected at position {new_head}")
-                return False
-                
-            self.positions.insert(0, new_head)
-                logger.debug("[COMMIT: add-error-handling-snake-game] Snake grew by one segment")
-                
-            return True
-        except Exception as e:
-            logger.error(f"[COMMIT: add-error-handling-snake-game] Error during snake movement: {e}")
+        head = self.positions[0]
+        x, y = self.direction
+        new_head = (head[0] + x, head[1] + y)
+        
+        if new_head[0] < 0 or new_head[0] >= GRID_WIDTH or \
+           new_head[1] < 0 or new_head[1] >= GRID_HEIGHT or \
+           new_head in self.positions:
             return False
+            
+        self.positions.insert(0, new_head)
+        
+        if not self.grow:
+            self.positions.pop()
+        else:
+            self.grow = False
+            
+        return True
         
     def change_direction(self, direction):
         if (direction[0] * -1, direction[1] * -1) != self.direction:
@@ -123,127 +72,85 @@ class Food:
                 return
 
 def draw_text(surface, text, size, color, x, y):
-    except pygame.error as e:
-        logger.error(f"[COMMIT: add-error-handling-snake-game] Font rendering error: {e}")
-    except Exception as e:
-        logger.error(f"[COMMIT: add-error-handling-snake-game] Unexpected error drawing text: {e}")
+    font = pygame.font.Font(None, size)
+    text_surface = font.render(text, True, color)
+    text_rect = text_surface.get_rect()
+    text_rect.center = (x, y)
+    surface.blit(text_surface, text_rect)
 
 def game_over_screen(screen, score):
-    try:
-        screen.fill(BLACK)
-        draw_text(screen, f"Game Over! Score: {score}", 40, WHITE, WIDTH//2, HEIGHT//2 - 50)
-        draw_text(screen, "Press SPACE to play again", 30, WHITE, WIDTH//2, HEIGHT//2 + 10)
-        draw_text(screen, "Press ESC to quit", 30, WHITE, WIDTH//2, HEIGHT//2 + 50)
-        pygame.display.flip()
-        logger.info(f"[COMMIT: add-error-handling-snake-game] Game over with score: {score}")
-        
-        waiting = True
-        while waiting:
-                logger.error(f"[COMMIT: add-error-handling-snake-game] Error processing game over events: {e}")
+    screen.fill(BLACK)
+    draw_text(screen, f"Game Over! Score: {score}", 40, WHITE, WIDTH//2, HEIGHT//2 - 50)
+    draw_text(screen, "Press SPACE to play again", 30, WHITE, WIDTH//2, HEIGHT//2 + 10)
+    draw_text(screen, "Press ESC to quit", 30, WHITE, WIDTH//2, HEIGHT//2 + 50)
+    pygame.display.flip()
+    
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 return False
-        
-        return False
-    except Exception as e:
-        logger.error(f"[COMMIT: add-error-handling-snake-game] Error in game over screen: {e}")
-        return False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    return True
+                elif event.key == pygame.K_ESCAPE:
+                    return False
+    
+    return False
 
 def main():
-    try:
-        logger.info("[COMMIT: add-error-handling-snake-game] Snake game started")
-        play_again = True
-        games_played = 0
+    play_again = True
+    
+    while play_again:
+        snake = Snake()
+        food = Food()
+        running = True
+        score = 0
         
-        while play_again:
-                food = Food()
-                running = True
-                score = 0
-                frame_count = 0
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    play_again = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        snake.change_direction((0, -1))
+                    elif event.key == pygame.K_DOWN:
+                        snake.change_direction((0, 1))
+                    elif event.key == pygame.K_LEFT:
+                        snake.change_direction((-1, 0))
+                    elif event.key == pygame.K_RIGHT:
+                        snake.change_direction((1, 0))
+            
+            if not snake.move():
+                play_again = game_over_screen(screen, score)
+                running = False
+                continue
                 
-                while running:
-                    try:
-                        # Event handling with error handling
-                        for event in pygame.event.get():
-                            if event.type == pygame.QUIT:
-                                logger.info("[COMMIT: add-error-handling-snake-game] Quit event received")
-                                running = False
-                                play_again = False
-                            elif event.type == pygame.KEYDOWN:
-                                if event.key == pygame.K_UP:
-                                    snake.change_direction((0, -1))
-                                elif event.key == pygame.K_DOWN:
-                                    snake.change_direction((0, 1))
-                        logger.error(f"[COMMIT: add-error-handling-snake-game] Error processing events: {e}")
-                        continue
-                    
-                    # Game logic with error handling
-                    try:
-                        if not snake.move():
-                            play_again = game_over_screen(screen, score)
-                            running = False
-                            continue
-                            
-                        if snake.positions[0] == food.position:
-                            snake.eat()d eaten. Score: {score}")
-                    except Exception as e:
-                        logger.error(f"[COMMIT: add-error-handling-snake-game] Error in game logic: {e}")
-                        running = False
-                        continue
-                    
-                    # Rendering with error handling
-                    try:
-                        screen.fill(BLACK)
-                        
-                        # Draw snake
-                        for position in snake.positions:
-                            rect = pygame.Rect(position[0] * CELL_SIZE, position[1] * CELL_SIZE,
-                                              CELL_SIZE, CELL_SIZE)
-                            pygame.draw.rect(screen, GREEN, rect)
-                        # Draw score
-                        draw_text(screen, f"Score: {score}", 30, WHITE, WIDTH//2, 30)
-                        
-                        pygame.display.flip()
-                    except pygame.error as e:
-                        logger.error(f"[COMMIT: add-error-handling-snake-game] Rendering error: {e}")
-                        running = False
-                        continue
-                    except Exception as e:
-                        logger.error(f"[COMMIT: add-error-handling-snake-game] Unexpected rendering error: {e}")
-                        running = False
-                        continue
-                    
-                    # Frame rate control with error handling
-                    try:
-                        clock.tick(10)
-                        frame_count += 1
-                        
-                        # Log performance metrics every 100 frames
-                        if frame_count % 100 == 0:
-                            fps = clock.get_fps()
-                            logger.debug(f"[COMMIT: add-error-handling-snake-game] FPS: {fps:.2f}")
-                    except Exception as e:
-                        logger.error(f"[COMMIT: add-error-handling-snake-game] Clock error: {e}")
+            if snake.positions[0] == food.position:
+                snake.eat()
+                food.randomize_position(snake.positions)
+                score += 10
                 
-            except Exception as e:
-                logger.error(f"[COMMIT: add-error-handling-snake-game] Game loop error: {e}")
-                play_again = False
+            screen.fill(BLACK)
+            
+            for position in snake.positions:
+                rect = pygame.Rect(position[0] * CELL_SIZE, position[1] * CELL_SIZE,
+                                  CELL_SIZE, CELL_SIZE)
+                pygame.draw.rect(screen, GREEN, rect)
+                pygame.draw.rect(screen, BLACK, rect, 1)
+            
+            food_rect = pygame.Rect(food.position[0] * CELL_SIZE, 
+                                   food.position[1] * CELL_SIZE,
+                                   CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(screen, RED, food_rect)
+            
+            draw_text(screen, f"Score: {score}", 30, WHITE, WIDTH//2, 30)
+            
+            pygame.display.flip()
+            clock.tick(10)
         
-        logger.info(f"[COMMIT: add-error-handling-snake-game] Game ended. Total games played: {games_played}")
-        
-    except Exception as e:
-        logger.error(f"[COMMIT: add-error-handling-snake-game] Fatal error in main: {e}")
-    finally:
-        try:
-            pygame.quit()
-            logger.info("[COMMIT: add-error-handling-snake-game] Pygame shut down successfully")
-        except Exception as e:
-            logger.error(f"[COMMIT: add-error-handling-snake-game] Error during pygame shutdown: {e}")
+    pygame.quit()
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        logger.info("[COMMIT: add-error-handling-snake-game] Game interrupted by user")
-        pygame.quit()
-        logger.error(f"[COMMIT: add-error-handling-snake-game] Unhandled exception: {e}")
-        pygame.quit()
-        sys.exit(1)
+    main()

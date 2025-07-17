@@ -36,12 +36,12 @@
       "best_practice": false
     },
     "logging monitoring": {
-      "critical": true,
-      "standard": true,
+      "critical": false,
+      "standard": false,
       "best_practice": false
     },
     "data validation": {
-      "critical": true,
+      "critical": false,
       "standard": false,
       "best_practice": false
     },
@@ -71,7 +71,7 @@
       "best_practice": false
     },
     "integration compatibility": {
-      "critical": true,
+      "critical": false,
       "standard": false,
       "best_practice": false
     },

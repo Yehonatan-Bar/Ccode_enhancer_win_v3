@@ -32,7 +32,7 @@ Logs workflow:
 
 10. If you wrote code, always run it, test it, and read the generated logs — it’s mandatory, and you must do it.
 
-11. **Context:** run_roles.py is a code review function that performs code analysis and returns recommendations for improvements and fixes. It is mandatory to implement all recommendations received from this tool.
+11. **Context:** run_roles_wrapper.py is a code review function that performs code analysis and returns recommendations for improvements and fixes. It is mandatory to implement all recommendations received from this tool. read  README_RUN_ROLES.md to understand it. 
 
 If you are developing, updating, or modifying code - this script is extremely important and must be an integral part of your development process. You must integrate it into every step and code update you make.
 
@@ -42,7 +42,7 @@ I want to see it after every todo in your todo list that involves code developme
 
 The call is made by adding the user's request and a description of how you implemented it:
 ```
-python run_roles.py --prompt "user request and how you implemented it"
+python run_roles_wrapper.py --additional-context  "user request and how you implemented it"
 ```
 
 **Important:** After receiving the recommendations from run_roles.py, you MUST:
@@ -53,7 +53,7 @@ python run_roles.py --prompt "user request and how you implemented it"
 When you're at this todo list step: Implement endpoint for /auth/google
 Then in your todo list after this, there will be a step to call run_roles like this:
 ```
-python run_roles.py --prompt "User requested to add user authentication via Google, and I implemented the /auth/google endpoint"
+python run_roles_wrapper.py --additional-context "User requested to add user authentication via Google, and I implemented the /auth/google endpoint"
 ```
 Followed by:
 - Implement recommendations from run_roles.py
@@ -63,7 +63,7 @@ Followed by:
 When you're at this todo list step: Create cart management API endpoints
 Then in your todo list after this, there will be a step to call run_roles like this:
 ```
-python run_roles.py --prompt "User requested to add shopping cart functionality, and I implemented CRUD endpoints for cart management including /cart/add, /cart/remove, and /cart/update"
+python run_roles_wrapper.py --additional-context "User requested to add shopping cart functionality, and I implemented CRUD endpoints for cart management including /cart/add, /cart/remove, and /cart/update"
 ```
 Followed by:
 - Implement recommendations from run_roles.py
@@ -73,7 +73,7 @@ Followed by:
 When you're at this todo list step: Set up WebSocket connection for notifications
 Then in your todo list after this, there will be a step to call run_roles like this:
 ```
-python run_roles.py --prompt "User requested to implement real-time notifications, and I set up WebSocket server with connection handling and notification broadcasting logic"
+python run_roles_wrapper.py --additional-context "User requested to implement real-time notifications, and I set up WebSocket server with connection handling and notification broadcasting logic"
 ```
 Followed by:
 - Implement recommendations from run_roles.py
@@ -81,4 +81,4 @@ Followed by:
 
 ---------
 
-Note! Use Ultrathink mode. Think hard, think deep, Reason thoughtfully and thoroughly, Engage in wise and comprehensive reasoning . 
+Note! Use Ultrathink mode. Think hard, think deep, Reason thoughtfully and thoroughly, Engage in wise and comprehensive reasoning. 

@@ -12,7 +12,13 @@
       "Bash(find:*)",
       "Bash(ls:*)",
       "Bash(cat:*)",
-      "Bash(chcp:*)"
+      "Bash(chcp:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(dir:*)",
+      "Bash(powershell:*)",
+      "Bash(claude --version)",
+      "Bash(export CLAUDE_CODE_GIT_BASH_PATH=\"C:\\Program Files\\Git\\bin\\bash.exe\")"
     ],
     "deny": []
   }

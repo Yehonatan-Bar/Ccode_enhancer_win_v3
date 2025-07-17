@@ -89,6 +89,25 @@ A helper script that shows differences between the last commit and the previous 
 python git_diff_last_commit.py
 ```
 
+### 5. `run_roles_wrapper.py` - Windows Environment Wrapper
+A wrapper script that ensures proper environment setup for running Claude CLI on Windows.
+
+**Purpose:**
+- Automatically sets required environment variables for Claude CLI execution
+- Handles Windows-specific command execution issues
+- Ensures compatibility across different shell environments (PowerShell, Git Bash, cmd)
+
+**Features:**
+- Sets `CLAUDE_CODE_GIT_BASH_PATH` for Claude to find Git Bash
+- Sets `COMSPEC` for proper Windows .cmd file execution
+- Passes all command-line arguments to `run_roles.py`
+- Cross-platform compatible (only applies fixes on Windows)
+
+**Usage:**
+```bash
+python run_roles_wrapper.py --additional-context "Your context here"
+```
+
 ## How It Works
 
 1. **Initialization**: 
@@ -117,6 +136,10 @@ python git_diff_last_commit.py
 2. **Configure roles** in `roles_config.json` based on review needs
 3. **Run the review**:
    ```bash
+   # Recommended for Windows users:
+   python run_roles_wrapper.py
+   
+   # Or with direct environment setup:
    python run_roles.py
    ```
 4. **Review output** from each role and address identified issues
@@ -138,6 +161,10 @@ Enable different severity levels for targeted reviews:
 ### Adding Context
 Provide additional context for all roles:
 ```bash
+# Using the wrapper (recommended for Windows):
+python run_roles_wrapper.py --additional-context "This code will handle financial transactions"
+
+# Or directly:
 python run_roles.py --additional-context "This code will handle financial transactions"
 ```
 
@@ -155,9 +182,34 @@ python run_roles.py --delay 10
 4. **Consistent Reviews**: Same review criteria applied every time
 5. **Flexible Focus**: Enable only the roles relevant to your changes
 
+## Troubleshooting
+
+### Windows Environment Issues
+If you encounter "Claude CLI is not installed or not in PATH" errors when running from certain environments (e.g., Git Bash, WSL):
+
+**Problem:** Different shell environments may have different PATH or environment variable configurations.
+
+**Solution 1 (Recommended):** Use the wrapper script:
+```bash
+python run_roles_wrapper.py --additional-context "Your context"
+```
+
+**Solution 2:** Set environment variables manually:
+```bash
+export CLAUDE_CODE_GIT_BASH_PATH="C:\\Program Files\\Git\\bin\\bash.exe"
+export COMSPEC="C:\\Windows\\System32\\cmd.exe"
+python run_roles.py --additional-context "Your context"
+```
+
+**Root Cause:** 
+- Claude CLI requires Git Bash on Windows (`CLAUDE_CODE_GIT_BASH_PATH`)
+- Windows .cmd files require proper `COMSPEC` setting
+- Different shells (PowerShell vs Git Bash) handle these differently
+
 ## Notes
 
 - The script requires `run_claude.py` to be present in the same directory
 - Git must be initialized and have at least one commit
 - Output encoding is handled for Windows compatibility
 - Each role runs independently with its own Claude instance
+- On Windows, use `run_roles_wrapper.py` for best compatibility

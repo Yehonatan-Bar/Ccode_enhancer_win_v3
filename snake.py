@@ -3,11 +3,7 @@ import random
 import sys
 
 
-try:
-    pygame.init()
-except pygame.error as e:
-    print(f"Failed to initialize pygame: {e}")
-    sys.exit(1)
+pygame.init()
 
 WIDTH = 600
 HEIGHT = 600

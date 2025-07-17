@@ -1,4 +1,4 @@
-The document @General_instructions.txt is of utmost importance — read it thoroughly and follow its instructions carefully.
+The document @General_instruction.txt is of utmost importance — read it thoroughly and follow its instructions carefully.
 
 1. Before you start, read  README.md and  project_structure.json to stay ancored to the existing code structure style conventions etc. 
 2. The folder structure and the design of the project are intended to be highly modular and easy to maintain.
@@ -44,6 +44,7 @@ The call is made by adding the user's request and a description of how you imple
 ```
 python run_roles_wrapper.py --additional-context  "user request and how you implemented it"
 ```
+Note: run_roles_wrapper.py runs claude instance and might take long to response, use longer timeout. If it fails, try again. if it faild again, write detailed report what happened. 
 
 **Important:** After receiving the recommendations from run_roles.py, you MUST:
 1. Implement all the suggested fixes and improvements

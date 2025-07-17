@@ -32,48 +32,51 @@ Logs workflow:
 
 10. If you wrote code, always run it, test it, and read the generated logs — it’s mandatory, and you must do it.
 
-11. **Context:** run_roles_wrapper.py is a code review function that performs code analysis and returns recommendations for improvements and fixes. It is mandatory to implement all recommendations received from this tool. read  README_RUN_ROLES.md to understand it. 
+Here's the updated version with file specifications in the examples:
+
+**11. Context:** run_roles_wrapper.py is a code review function that performs code analysis and returns recommendations for improvements and fixes. It is mandatory to implement all recommendations received from this tool. Read README_RUN_ROLES.md to understand it.
 
 If you are developing, updating, or modifying code - this script is extremely important and must be an integral part of your development process. You must integrate it into every step and code update you make.
 
 I want to see it after every todo in your todo list that involves code development.
 
-The call is made by adding the user's request and a description of how you implemented it:
+The call is made by adding the user's request and a description of how you implemented it (Write in detail which files were changed):
 ```
-python run_roles_wrapper.py --additional-context  "user request and how you implemented it"
+python run_roles_wrapper.py --additional-context "user request and how you implemented it and the files that was modified"
 ```
-Note: run_roles_wrapper.py runs claude instance and might take long to response, use very long timeout. If it fails, try again with even longer timeout. if it faild again, write detailed report what happened. 
+Note: run_roles_wrapper.py runs claude instance and might take long to response, use very long timeout. If it fails, try again with even longer timeout. If it failed again, write detailed report what happened.
 
 **Important:** After receiving the recommendations from run_roles_wrapper.py, you MUST:
 1. Implement all the suggested fixes and improvements
+If Claude's responses were cut off or incomplete, you can find them in the txt files that start with **"claude_output_"**.
 
 **Example 1:** If the user requested to add user authentication via Google, and you're implementing it:
 When you're at this todo list step: Implement endpoint for /auth/google
 Then in your todo list after this, there will be a step to call run_roles like this:
 ```
-python run_roles_wrapper.py --additional-context "User requested to add user authentication via Google, and I implemented the /auth/google endpoint"
+python run_roles_wrapper.py --additional-context "User requested to add user authentication via Google, and I implemented the /auth/google endpoint. Modified files: routes/auth.js (added Google OAuth routes), controllers/authController.js (implemented googleAuth and googleCallback methods), config/passport.js (added Google OAuth strategy), models/User.js (added googleId field)"
 ```
 Followed by:
-- Implement recommendations from run_roles.py
+- Implement recommendations from run_roles_wrapper.py
 
 **Example 2:** If the user requested to add a shopping cart feature, and you're implementing it:
 When you're at this todo list step: Create cart management API endpoints
-Then in your todo list after this, there will be a step to call run_roles like this:
+Then in your todo list after this, there will be a step to call run_roles_wrapper like this:
 ```
-python run_roles_wrapper.py --additional-context "User requested to add shopping cart functionality, and I implemented CRUD endpoints for cart management including /cart/add, /cart/remove, and /cart/update"
+python run_roles_wrapper.py --additional-context "User requested to add shopping cart functionality, and I implemented CRUD endpoints for cart management including /cart/add, /cart/remove, and /cart/update. Modified files: routes/cart.js (created new cart routes), controllers/cartController.js (implemented addToCart, removeFromCart, updateCart, getCart methods), models/Cart.js (created cart schema), models/CartItem.js (created cart item schema), middleware/cartValidation.js (added validation rules)"
 ```
 Followed by:
-- Implement recommendations from run_roles.py
+- Implement recommendations from run_roles_wrapper.py
 
 **Example 3:** If the user requested to implement real-time notifications, and you're working on it:
 When you're at this todo list step: Set up WebSocket connection for notifications
-Then in your todo list after this, there will be a step to call run_roles like this:
+Then in your todo list after this, there will be a step to call run_roles_wrapper like this:
 ```
-python run_roles_wrapper.py --additional-context "User requested to implement real-time notifications, and I set up WebSocket server with connection handling and notification broadcasting logic"
+python run_roles_wrapper.py --additional-context "User requested to implement real-time notifications, and I set up WebSocket server with connection handling and notification broadcasting logic. Modified files: server.js (integrated Socket.io), websocket/notificationHandler.js (created notification event handlers), websocket/socketManager.js (implemented connection management), client/src/hooks/useNotifications.js (created custom hook for notifications), client/src/components/NotificationBell.js (created notification UI component)"
 ```
 Followed by:
-- Implement recommendations from run_roles.py
+- Implement recommendations from run_roles_wrapper.py
 
 ---------
 
-Note! Use Ultrathink mode. Think hard, think deep, Reason thoughtfully and thoroughly, Engage in wise and comprehensive reasoning. 
+Note! Use Ultrathink mode. Think hard, think deep, Reason thoughtfully and thoroughly, Engage in wise and comprehensive reasoning.

@@ -2,11 +2,11 @@
   "roles": {
     "error handling": {
       "critical": true,
-      "standard": false,
+      "standard": true,
       "best_practice": false
     },
     "security review": {
-      "critical": false,
+      "critical": true,
       "standard": false,
       "best_practice": false
     },
@@ -16,8 +16,8 @@
       "best_practice": false
     },
     "code quality": {
-      "critical": false,
-      "standard": false,
+      "critical": true,
+      "standard": true,
       "best_practice": false
     },
     "testing coverage": {
@@ -61,7 +61,7 @@
       "best_practice": false
     },
     "logging implementation": {
-      "critical": false,
+      "critical": true,
       "standard": false,
       "best_practice": false
     },

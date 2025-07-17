@@ -7,7 +7,12 @@
       "Bash(python:*)",
       "Bash(venv_Ccode_enhancer_win_v3Scriptsactivate.bat)",
       "Bash(python:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(del test_roles_config.py)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(chcp:*)"
     ],
     "deny": []
   }

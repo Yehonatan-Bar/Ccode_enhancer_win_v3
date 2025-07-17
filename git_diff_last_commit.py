@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script to show the differences between the last commit and the previous one.
+Script to show the differences between the last commit and the current uncommitted code.
 """
 
 import subprocess
@@ -8,27 +8,25 @@ import sys
 
 
 def get_git_diff():
-    """Get the diff between the last commit and the previous one."""
+    """Get the diff between the last commit and current uncommitted changes."""
     try:
-        # Get the diff between HEAD and HEAD~1
+        # Get the diff between HEAD and working directory
         result = subprocess.run(
-            ['git', 'diff', 'HEAD~1', 'HEAD'],
+            ['git', 'diff', 'HEAD'],
             capture_output=True,
             text=True,
             check=True
         )
         
         if result.stdout:
-            print("Differences between the last commit and the previous one:")
+            print("Differences between the last commit and current uncommitted changes:")
             print("-" * 80)
             print(result.stdout)
         else:
-            print("No differences found between the last commit and the previous one.")
+            print("No uncommitted changes found.")
             
     except subprocess.CalledProcessError as e:
-        if e.stderr and "ambiguous argument 'HEAD~1'" in e.stderr:
-            print("Error: This appears to be the first commit (no previous commit exists).")
-        elif e.stderr:
+        if e.stderr:
             print(f"Git error: {e.stderr}")
         else:
             print(f"Git command failed with return code {e.returncode}")
@@ -42,18 +40,18 @@ def get_git_diff():
 
 
 def get_commit_info():
-    """Get information about the last two commits."""
+    """Get information about the last commit and current status."""
     try:
-        # Get info about the last two commits
+        # Get info about the last commit
         result = subprocess.run(
-            ['git', 'log', '--oneline', '-2'],
+            ['git', 'log', '--oneline', '-1'],
             capture_output=True,
             text=True,
             check=True
         )
         
         if result.stdout:
-            print("\nLast two commits:")
+            print("\nLast commit:")
             print(result.stdout)
             print()
             
@@ -66,6 +64,34 @@ def get_commit_info():
         print("Error: Git is not installed or not in PATH.")
     except Exception as e:
         print(f"Unexpected error getting commit info: {type(e).__name__}: {e}")
+
+
+def get_status_info():
+    """Get git status information."""
+    try:
+        # Get git status
+        result = subprocess.run(
+            ['git', 'status', '--short'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        if result.stdout:
+            print("Current git status:")
+            print(result.stdout)
+        else:
+            print("Working directory is clean.")
+            
+    except subprocess.CalledProcessError as e:
+        if e.stderr:
+            print(f"Error getting status: {e.stderr}")
+        else:
+            print(f"Error getting status: Command failed with return code {e.returncode}")
+    except FileNotFoundError:
+        print("Error: Git is not installed or not in PATH.")
+    except Exception as e:
+        print(f"Unexpected error getting status: {type(e).__name__}: {e}")
 
 
 def main():
@@ -85,6 +111,7 @@ def main():
         sys.exit(1)
     
     get_commit_info()
+    get_status_info()
     get_git_diff()
 
 

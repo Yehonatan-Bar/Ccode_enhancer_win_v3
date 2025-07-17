@@ -18,7 +18,8 @@
     "ERROR_HANDLING": true,
     "DEBUG": false,
     "MONITORING": true,
-    "CONFIGURATION": true
+    "CONFIGURATION": true,
+    "USER_MANAGEMENT": true
   },
   "modules": {
     "ANALYZERS": true,
@@ -35,7 +36,9 @@
     "TESTS": true,
     "TOOLS": true,
     "SCRIPTS": true,
-    "CONFIGS": true
+    "CONFIGS": true,
+    "CONTROLLERS": true,
+    "COMPONENTS": true
   },
   "output": {
     "format": "json",

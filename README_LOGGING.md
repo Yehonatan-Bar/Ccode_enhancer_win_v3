@@ -6,12 +6,14 @@ A production-ready logging system with dual-tag architecture for Python applicat
 
 - **Dual-Tag Architecture**: Each log entry has both a feature tag (user-facing functionality) and module tag (internal code structure)
 - **Multiple Storage Backends**: Memory, file, and archived file storage with automatic rotation
+- **Automatic Log Archiving**: Automatically archives existing logs to timestamped folders on each new session
 - **Configurable Filtering**: Enable/disable logging by feature, module, or log level
 - **Security-First**: Automatic sanitization of sensitive parameters
 - **Comprehensive Analysis**: Built-in log analyzer with feature and module grouping
 - **Context Tracking**: Automatic context propagation (user ID, session ID, request ID)
 - **Multiple Formatters**: JSON and human-readable formatters
 - **Production Ready**: Log rotation, archiving, and performance optimizations
+- **Fallback Support**: Graceful fallback to standard Python logging when structured logging is unavailable
 
 ## Quick Start
 
@@ -23,7 +25,7 @@ from structured_logging import setup_logging, logger, FEATURE_TAGS, MODULE_TAGS
 # Initialize the logging system
 setup_logging(
     use_console=True,     # Console output
-    use_file=True,        # File storage
+    use_file=True,        # File storage (creates timestamped subdirectories)
     use_memory=True,      # Memory storage for analysis
     log_directory="./logs"
 )
@@ -36,6 +38,86 @@ logger.info(
     'Browser launched successfully',
     {'browser_type': 'chrome', 'window_size': '1920x1080'}
 )
+```
+
+### 1.1 Manual Configuration with Auto-Archiving
+
+For applications that need logs directly in the logs folder with automatic archiving:
+
+```python
+import os
+import shutil
+from datetime import datetime
+from structured_logging import logger, FEATURE_TAGS, MODULE_TAGS, config_manager
+from structured_logging.storage.file_storage import FileLogStorage
+from structured_logging.formatters import ConsoleFormatter
+
+# Load configuration
+config_manager.config_file = "logging.json"
+config_manager.reload_config()
+
+# Archive existing app.log if it exists
+log_dir = "./logs"
+app_log_path = os.path.join(log_dir, "app.log")
+
+if os.path.exists(app_log_path):
+    # Create timestamped folder for archive
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    archive_dir = os.path.join(log_dir, f"archive_{timestamp}")
+    os.makedirs(archive_dir, exist_ok=True)
+    
+    # Move existing app.log to archive
+    shutil.move(app_log_path, os.path.join(archive_dir, "app.log"))
+    
+    # Also move stats and rotated files
+    stats_path = os.path.join(log_dir, ".stats.json")
+    if os.path.exists(stats_path):
+        shutil.move(stats_path, os.path.join(archive_dir, ".stats.json"))
+    
+    # Move any rotated log files
+    for i in range(1, 10):
+        for ext in ["", ".gz"]:
+            rotated_file = os.path.join(log_dir, f"app.log.{i}{ext}")
+            if os.path.exists(rotated_file):
+                shutil.move(rotated_file, os.path.join(archive_dir, f"app.log.{i}{ext}"))
+
+# Create standard file storage (NOT archived)
+file_storage = FileLogStorage(
+    directory="./logs",
+    filename="app.log",
+    max_file_size=10 * 1024 * 1024,  # 10MB
+    max_files=5,
+    compress_rotated=True
+)
+
+# Create console formatter
+console_formatter = ConsoleFormatter()
+
+# Add storage and formatter to logger
+logger.add_storage(file_storage)
+logger.add_formatter(console_formatter)
+
+# Now you can log
+logger.info(
+    FEATURE_TAGS.PERFORMANCE,
+    MODULE_TAGS.SERVICES,
+    'app_start',
+    'Application started successfully',
+    {'version': '1.0.0'}
+)
+```
+
+This creates a flat log structure:
+```
+logs/
+├── app.log                    # Current session logs
+├── .stats.json               # Current statistics
+├── archive_2025-07-17_10-59-18/  # Previous session 1
+│   ├── app.log
+│   └── .stats.json
+└── archive_2025-07-17_10-58-57/  # Previous session 2
+    ├── app.log
+    └── .stats.json
 ```
 
 ### 2. Configuration
@@ -198,6 +280,9 @@ logger.add_storage(file_storage)
 ```
 
 ### Archived File Storage
+
+The `ArchivedFileLogStorage` automatically creates timestamped subdirectories for each session:
+
 ```python
 from structured_logging import ArchivedFileLogStorage
 
@@ -213,6 +298,12 @@ archives = archived_storage.get_archive_directories()
 archived_logs = archived_storage.query_archived_logs(archives[0]['name'])
 ```
 
+**Note**: This creates logs in timestamped subdirectories:
+- `logs/2025-07-17_10-52-22/app.log`
+- `logs/2025-07-17_10-53-28/app.log`
+
+If you prefer logs directly in the `logs/` folder with archiving, use the manual configuration approach shown in section 1.1.
+
 ## Formatters
 
 ### JSON Formatter
@@ -225,7 +316,8 @@ logger.add_formatter(json_formatter)
 
 ### Pretty Formatter
 ```python
-from structured_logging import ConsoleFormatter, FileFormatter
+# Note: ConsoleFormatter and FileFormatter are in the formatters module
+from structured_logging.formatters import ConsoleFormatter, FileFormatter
 
 # For console output (with colors)
 console_formatter = ConsoleFormatter()
@@ -234,6 +326,17 @@ logger.add_formatter(console_formatter)
 # For file output (without colors)
 file_formatter = FileFormatter()
 logger.add_formatter(file_formatter)
+```
+
+**Important**: The `ConsoleFormatter` and `FileFormatter` are located in the `structured_logging.formatters` module, not directly in `structured_logging`. Use the correct import:
+
+```python
+# Correct imports
+from structured_logging import logger, FEATURE_TAGS, MODULE_TAGS
+from structured_logging.formatters import ConsoleFormatter, FileFormatter
+
+# Incorrect imports (will cause ImportError)
+# from structured_logging import ConsoleFormatter  # Wrong!
 ```
 
 ## Pre-configured Loggers
@@ -282,6 +385,76 @@ logger.error(
     'save_data',
     'Failed to save data',
     error
+)
+```
+
+### Fallback Logger Adapter
+
+When structured logging is not available, use this adapter pattern:
+
+```python
+import logging
+
+# Fallback when structured_logging is not available
+try:
+    from structured_logging import logger, FEATURE_TAGS, MODULE_TAGS
+    STRUCTURED_LOGGING_AVAILABLE = True
+except ImportError:
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    base_logger = logging.getLogger(__name__)
+    STRUCTURED_LOGGING_AVAILABLE = False
+    
+    # Create dummy tags
+    class FEATURE_TAGS:
+        PERFORMANCE = "PERFORMANCE"
+        USER_MANAGEMENT = "USER_MANAGEMENT"
+        ERROR_HANDLING = "ERROR_HANDLING"
+    
+    class MODULE_TAGS:
+        SERVICES = "SERVICES"
+        COMPONENTS = "COMPONENTS"
+        CONTROLLERS = "CONTROLLERS"
+    
+    # Create adapter that converts structured calls to standard logging
+    class LoggerAdapter:
+        def __init__(self, logger):
+            self.logger = logger
+        
+        def info(self, feature_tag, module_tag, function_name, message, parameters=None):
+            log_msg = f"[{feature_tag}:{module_tag}] {function_name} - {message}"
+            if parameters:
+                log_msg += f" | {parameters}"
+            self.logger.info(log_msg)
+        
+        def debug(self, feature_tag, module_tag, function_name, message, parameters=None):
+            log_msg = f"[{feature_tag}:{module_tag}] {function_name} - {message}"
+            if parameters:
+                log_msg += f" | {parameters}"
+            self.logger.debug(log_msg)
+        
+        def warning(self, feature_tag, module_tag, function_name, message, parameters=None):
+            log_msg = f"[{feature_tag}:{module_tag}] {function_name} - {message}"
+            if parameters:
+                log_msg += f" | {parameters}"
+            self.logger.warning(log_msg)
+        
+        def error(self, feature_tag, module_tag, function_name, message, exception=None, parameters=None):
+            log_msg = f"[{feature_tag}:{module_tag}] {function_name} - {message}"
+            if parameters:
+                log_msg += f" | {parameters}"
+            if exception:
+                log_msg += f" | Exception: {exception}"
+            self.logger.error(log_msg)
+    
+    logger = LoggerAdapter(base_logger)
+
+# Now use the same API regardless of availability
+logger.info(
+    FEATURE_TAGS.PERFORMANCE,
+    MODULE_TAGS.SERVICES,
+    'process_data',
+    'Processing data',
+    {'size': 1024}
 )
 ```
 
@@ -352,6 +525,51 @@ structured_logging/
 └── formatters/           # Output formatters
     ├── json_formatter.py
     └── pretty_formatter.py
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **ImportError: No module named 'structured_logging.formatters.console_formatter'**
+   - Solution: Use `from structured_logging.formatters import ConsoleFormatter` instead
+
+2. **Logs creating timestamped subdirectories instead of app.log in logs folder**
+   - Solution: Use manual configuration with `FileLogStorage` instead of `setup_logging(use_file=True)`
+   - The default `setup_logging` uses `ArchivedFileLogStorage` which creates timestamped directories
+
+3. **TypeError: not all arguments converted during string formatting**
+   - This occurs when structured logging falls back to standard Python logging
+   - Ensure structured_logging is properly installed and accessible
+   - Use the LoggerAdapter pattern for graceful fallback
+
+4. **No logs appearing**
+   - Check if logging is enabled in `logging.json`
+   - Verify the feature and module tags are enabled in configuration
+   - Ensure the log directory exists and has write permissions
+
+5. **Unicode encoding errors in console output**
+   - This can occur on Windows with special characters
+   - Replace Unicode symbols (✓, ✗) with ASCII alternatives ([OK], [FAIL])
+
+### Log File Locations
+
+Default behavior with `setup_logging(use_file=True)`:
+```
+logs/
+└── 2025-07-17_10-52-22/     # Timestamped directory
+    ├── app.log               # Log file
+    └── .stats.json           # Statistics
+```
+
+With manual archiving configuration:
+```
+logs/
+├── app.log                   # Current session (direct in logs/)
+├── .stats.json              # Current statistics
+└── archive_2025-07-17_10-59-18/  # Archived previous session
+    ├── app.log
+    └── .stats.json
 ```
 
 ## License

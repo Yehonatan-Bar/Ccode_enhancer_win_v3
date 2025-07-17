@@ -109,8 +109,20 @@ python run_claude.py "analyze this codebase"
 # Role-based analysis
 python run_claude.py "security review" "check for vulnerabilities"
 
-# Multiple roles
-python run_roles.py "error handling" "security review" "performance review"
+# Automated code review with multiple roles
+python run_roles.py
+```
+
+### Automated Code Review System
+The project includes a comprehensive automated code review system that analyzes your recent git commits through multiple specialized lenses. For detailed documentation, see [README_RUN_ROLES.md](README_RUN_ROLES.md).
+
+Quick example:
+```bash
+# Run automated review with default configuration
+python run_roles.py
+
+# Run with custom delay and additional context
+python run_roles.py --delay 5 --prompt "Focus on security aspects"
 ```
 
 ### Web Automation
@@ -146,6 +158,7 @@ result = click_element(
 - **Git diff integration**
 - **Role-based prompting system**
 - **Interactive permission handling**
+- **Automated Code Review System**: Comprehensive multi-role analysis of code changes with configurable severity levels. See [README_RUN_ROLES.md](README_RUN_ROLES.md) for detailed documentation.
 
 ### 2. Browser Handler (`utils/browser_handler/`)
 - **`BrowserManager`**: Core browser automation and window management
@@ -183,12 +196,20 @@ result = click_element(
 
 ### Code Review Automation
 ```bash
-# Comprehensive code review
-python run_roles.py "error handling" "security review" "performance review" "code quality"
+# Run automated code review with configured roles
+python run_roles.py
 
-# Custom prompt with role
+# Configure specific roles in roles_config.json then run
+python run_roles.py --delay 5
+
+# Custom prompt with single role
 python run_claude.py "security review" "focus on authentication mechanisms"
+
+# View git diff independently
+python git_diff_last_commit.py
 ```
+
+For comprehensive code review documentation and configuration options, see [README_RUN_ROLES.md](README_RUN_ROLES.md).
 
 ### Web Analysis Pipeline
 ```python
@@ -257,6 +278,8 @@ Customize AI analysis roles:
 ```
 
 ### Available Analysis Roles
+The automated code review system supports 16 specialized analysis roles with configurable severity levels (Critical, Standard, Best Practice):
+
 - **Error Handling**: Exception handling and error scenarios
 - **Security Review**: Vulnerability assessment and security best practices
 - **Performance Review**: Optimization and efficiency analysis
@@ -269,6 +292,12 @@ Customize AI analysis roles:
 - **Concurrency Review**: Thread safety and synchronization
 - **Deployment Readiness**: Production deployment preparation
 - **Accessibility Compliance**: WCAG standards and usability
+- **Logging Implementation**: Consistency with existing logging patterns
+- **Requirement Fulfillment**: Verification against original requirements
+- **Integration Compatibility**: System integration and compatibility checks
+- **State and Data Flow**: Data flow analysis and state management
+
+Configure active roles and severity levels in `roles_config.json`. See [README_RUN_ROLES.md](README_RUN_ROLES.md) for detailed configuration.
 
 ### Environment Configuration
 The system automatically configures:

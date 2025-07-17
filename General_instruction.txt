@@ -44,7 +44,7 @@ The call is made by adding the user's request and a description of how you imple
 ```
 python run_roles_wrapper.py --additional-context "user request and how you implemented it and the files that was modified"
 ```
-Note: run_roles_wrapper.py runs claude instance and might take long to response, use very long timeout. If it fails, try again with even longer timeout. If it failed again, write detailed report what happened.
+Note: run_roles_wrapper.py runs claude instance and might take long to response, use very long timeout - 10 minutes at list. If it fails, try again with even longer timeout - 20 minutes. If it failed again, write detailed report what happened.
 
 **Important:** After receiving the recommendations from run_roles_wrapper.py, you MUST:
 1. Implement all the suggested fixes and improvements

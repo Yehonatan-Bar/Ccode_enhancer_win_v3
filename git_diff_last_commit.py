@@ -10,7 +10,9 @@ import sys
 def get_git_diff():
     """Get the diff between the last commit and current uncommitted changes."""
     try:
-        # Get the diff between HEAD and working directory
+        all_output = []
+        
+        # First, get the diff for tracked files
         result = subprocess.run(
             ['git', 'diff', 'HEAD'],
             capture_output=True,
@@ -19,17 +21,89 @@ def get_git_diff():
         )
         
         if result.stdout:
+            all_output.append("=== Modified tracked files ===")
+            all_output.append(result.stdout)
+        
+        # Get the list of untracked files
+        untracked_result = subprocess.run(
+            ['git', 'ls-files', '--others', '--exclude-standard'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        if untracked_result.stdout:
+            untracked_files = untracked_result.stdout.strip().split('\n')
+            untracked_files = [f for f in untracked_files if f]  # Remove empty strings
+            
+            # Filter out less important files to focus on code changes
+            important_extensions = ['.py', '.js', '.ts', '.jsx', '.tsx', '.java', '.cpp', '.c', '.h', 
+                                  '.cs', '.rb', '.go', '.rs', '.swift', '.php', '.html', '.css',
+                                  '.json', '.xml', '.yaml', '.yml', '.md', '.txt']
+            filtered_files = []
+            for f in untracked_files:
+                # Skip claude output files and archive directory
+                if 'claude_output_' in f or f.startswith('archive/'):
+                    continue
+                # Include files with important extensions or no extension (could be scripts)
+                if any(f.endswith(ext) for ext in important_extensions) or '.' not in f:
+                    filtered_files.append(f)
+            
+            untracked_files = filtered_files
+            
+            if untracked_files:
+                all_output.append("\n=== New untracked files ===")
+                for file in untracked_files:
+                    all_output.append(f"\n+++ New file: {file}")
+                    try:
+                        # Try to show content of new text files (skip binary)
+                        with open(file, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                            # Create a diff-like format for new files
+                            all_output.append(f"@@ -0,0 +1,{len(content.splitlines())} @@")
+                            for i, line in enumerate(content.splitlines()[:100], 1):  # Limit to first 100 lines
+                                all_output.append(f"+{line}")
+                            if len(content.splitlines()) > 100:
+                                all_output.append(f"... [{len(content.splitlines()) - 100} more lines]")
+                    except (UnicodeDecodeError, FileNotFoundError, IsADirectoryError):
+                        all_output.append("[Binary file or directory]")
+                    except Exception as e:
+                        all_output.append(f"[Could not read file: {e}]")
+        
+        # Reorder output: new files first, then modified files
+        final_output = []
+        
+        # Find new files section and add it first
+        new_files_index = -1
+        for i, item in enumerate(all_output):
+            if "=== New untracked files ===" in item:
+                new_files_index = i
+                break
+        
+        if new_files_index >= 0:
+            # Add new files section first
+            final_output.extend(all_output[new_files_index:])
+        
+        # Then add modified files
+        if result.stdout:
+            if final_output:
+                final_output.append("\n")
+            final_output.extend(all_output[:new_files_index if new_files_index >= 0 else len(all_output)])
+        
+        # Output everything
+        if final_output:
             print("Differences between the last commit and current uncommitted changes:")
             print("-" * 80)
             
-            # Split output into lines and limit to 500 lines
-            lines = result.stdout.splitlines()
+            combined_output = '\n'.join(final_output)
+            lines = combined_output.splitlines()
+            
             if len(lines) > 500:
                 for i, line in enumerate(lines[:500]):
                     print(line)
                 print(f"\n[Output truncated at line 500 - total output was {len(lines)} lines]")
             else:
-                print(result.stdout)
+                print(combined_output)
         else:
             print("No uncommitted changes found.")
             

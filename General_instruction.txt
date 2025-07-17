@@ -36,17 +36,15 @@ Logs workflow:
 
 If you are developing, updating, or modifying code - this script is extremely important and must be an integral part of your development process. You must integrate it into every step and code update you make.
 
-First, add to the Todo list: to switch to a new branch, add a commit, and push the current code before starting work, so you begin with a clean slate.
-
 I want to see it after every todo in your todo list that involves code development.
 
 The call is made by adding the user's request and a description of how you implemented it:
 ```
 python run_roles_wrapper.py --additional-context  "user request and how you implemented it"
 ```
-Note: run_roles_wrapper.py runs claude instance and might take long to response, use longer timeout. If it fails, try again. if it faild again, write detailed report what happened. 
+Note: run_roles_wrapper.py runs claude instance and might take long to response, use very long timeout. If it fails, try again with even longer timeout. if it faild again, write detailed report what happened. 
 
-**Important:** After receiving the recommendations from run_roles.py, you MUST:
+**Important:** After receiving the recommendations from run_roles_wrapper.py, you MUST:
 1. Implement all the suggested fixes and improvements
 2. After implementing the recommendations, perform git add, commit, and push to the current branch
 

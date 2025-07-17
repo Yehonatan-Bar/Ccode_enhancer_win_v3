@@ -148,7 +148,7 @@ def save_high_score(score):
                     data = json.load(f)
                     high_score = data.get('high_score', 0)
             except (json.JSONDecodeError, IOError) as e:
-                logger.warning(f"Could not read high score file: {e}")
+                logger.warning(f"Could not read high score file : {e}")
         
         # Update if new high score
         if score > high_score:

@@ -21,7 +21,15 @@ def get_git_diff():
         if result.stdout:
             print("Differences between the last commit and current uncommitted changes:")
             print("-" * 80)
-            print(result.stdout)
+            
+            # Split output into lines and limit to 500 lines
+            lines = result.stdout.splitlines()
+            if len(lines) > 500:
+                for i, line in enumerate(lines[:500]):
+                    print(line)
+                print(f"\n[Output truncated at line 500 - total output was {len(lines)} lines]")
+            else:
+                print(result.stdout)
         else:
             print("No uncommitted changes found.")
             

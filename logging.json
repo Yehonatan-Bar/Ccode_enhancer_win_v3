@@ -38,7 +38,8 @@
     "SCRIPTS": true,
     "CONFIGS": true,
     "CONTROLLERS": true,
-    "COMPONENTS": true
+    "COMPONENTS": true,
+    "SNAKE_GAME": true
   },
   "output": {
     "format": "json",

@@ -83,5 +83,10 @@
             <standard>Review state management consistency, data transformations, and flow between components. Ensure proper handling of async operations, callbacks, and promises. Check that data maintains integrity throughout its lifecycle.</standard>
             <best_practice>Evaluate state management patterns: immutability where appropriate, clear data flow architecture, proper separation of concerns, and predictable state transitions. Suggest improvements for data flow clarity and reliability.</best_practice>
         </prompt>
+        <prompt key="execution verification">
+            <critical>Verify the code can execute without critical runtime errors: syntax errors, import failures, undefined variables, or missing dependencies that prevent the program from starting. Test basic execution paths to ensure the code runs.</critical>
+            <standard>Review that the code executes smoothly under normal conditions: proper error handling during runtime, graceful degradation for edge cases, and stable performance. Verify all major code paths execute without errors.</standard>
+            <best_practice>Evaluate comprehensive execution verification: automated smoke tests, continuous integration checks, runtime monitoring, performance benchmarks, and production-readiness verification. Suggest testing strategies for maximum reliability.</best_practice>
+        </prompt>
     </roles>
 </prompts>

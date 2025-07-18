@@ -18,7 +18,8 @@
       "Bash(dir:*)",
       "Bash(powershell:*)",
       "Bash(claude --version)",
-      "Bash(export CLAUDE_CODE_GIT_BASH_PATH=\"C:\\Program Files\\Git\\bin\\bash.exe\")"
+      "Bash(export CLAUDE_CODE_GIT_BASH_PATH=\"C:\\Program Files\\Git\\bin\\bash.exe\")",
+      "Bash(cmd /c:*)"
     ],
     "deny": []
   }

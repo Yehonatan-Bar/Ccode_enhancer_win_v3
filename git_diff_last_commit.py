@@ -5,7 +5,12 @@ Script to show the differences between the last commit and the current uncommitt
 
 import subprocess
 import sys
+import io
 from cc_logging import setup_logger, log_exception
+
+# Set stdout to handle Unicode on Windows
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 
 def get_git_diff():
@@ -21,6 +26,7 @@ def get_git_diff():
             ['git', 'diff', 'HEAD'],
             capture_output=True,
             text=True,
+            encoding='utf-8',
             check=True
         )
         
@@ -36,6 +42,7 @@ def get_git_diff():
             ['git', 'ls-files', '--others', '--exclude-standard'],
             capture_output=True,
             text=True,
+            encoding='utf-8',
             check=True
         )
         
@@ -110,10 +117,14 @@ def get_git_diff():
             
             if len(lines) > 500:
                 for i, line in enumerate(lines[:500]):
-                    print(line)
+                    # Encode to UTF-8 and decode with error handling
+                    safe_line = line.encode('utf-8', errors='replace').decode('utf-8')
+                    print(safe_line)
                 print(f"\n[Output truncated at line 500 - total output was {len(lines)} lines]")
             else:
-                print(combined_output)
+                # Encode to UTF-8 and decode with error handling
+                safe_output = combined_output.encode('utf-8', errors='replace').decode('utf-8')
+                print(safe_output)
         else:
             logger.info("No uncommitted changes found")
             print("No uncommitted changes found.")
@@ -147,6 +158,7 @@ def get_commit_info():
             ['git', 'log', '--oneline', '-1'],
             capture_output=True,
             text=True,
+            encoding='utf-8',
             check=True
         )
         
@@ -174,6 +186,7 @@ def get_status_info():
             ['git', 'status', '--short'],
             capture_output=True,
             text=True,
+            encoding='utf-8',
             check=True
         )
         
@@ -204,6 +217,7 @@ def main():
         subprocess.run(
             ['git', 'rev-parse', '--git-dir'],
             capture_output=True,
+            encoding='utf-8',
             check=True
         )
     except subprocess.CalledProcessError:

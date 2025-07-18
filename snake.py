@@ -93,7 +93,22 @@ class Snake:
             self.direction = direction
             
     def eat(self):
-        self.grow = True
+        try:
+            # Check if snake has reached maximum safe length
+            if len(self.positions) >= self.max_length:
+                logger.warning(f"Snake reached maximum length limit: {self.max_length}")
+                # Don't grow anymore to prevent memory issues
+                return False
+            elif len(self.positions) >= self.max_length * 0.9:
+                # Warn when approaching limit
+                logger.info(f"Snake approaching maximum length: {len(self.positions)}/{self.max_length}")
+            
+            self.grow = True
+            return True
+        except Exception as e:
+            logger.error(f"Error in snake eat method: {e}")
+            # Safe fallback - don't grow if there's an error
+            return False
 
 class Food:
     def __init__(self):
@@ -114,13 +129,32 @@ class Food:
                     return
                 attempts += 1
             
-            # If we can't find a free position, the game is essentially won
-            logger.warning("No free position for food - game board full!")
+            # If we can't find a free position after max attempts
+            logger.warning("No free position for food after max attempts")
+            # Try to find any free position systematically
+            if snake_positions:
+                for x in range(GRID_WIDTH):
+                    for y in range(GRID_HEIGHT):
+                        if (x, y) not in snake_positions:
+                            self.position = (x, y)
+                            logger.info(f"Found alternative food position at {self.position}")
+                            return
+            # Game board is truly full
+            logger.info("Game board full - player wins!")
             self.position = None
         except Exception as e:
             logger.error(f"Error randomizing food position: {e}")
-            # Set a default position as fallback
-            self.position = (0, 0)
+            # Try to find a safe fallback position
+            if snake_positions and (0, 0) not in snake_positions:
+                self.position = (0, 0)
+            else:
+                # Find first available position
+                for x in range(GRID_WIDTH):
+                    for y in range(GRID_HEIGHT):
+                        if snake_positions is None or (x, y) not in snake_positions:
+                            self.position = (x, y)
+                            return
+                self.position = None
 
 def draw_text(surface, text, size, color, x, y):
     try:
@@ -133,6 +167,18 @@ def draw_text(surface, text, size, color, x, y):
         logger.error(f"Error drawing text '{text}': {e}")
         # Continue without crashing the game
 
+def flash_screen(surface, color, duration=100):
+    """Create a brief flash effect on the screen"""
+    try:
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.set_alpha(128)  # Semi-transparent
+        overlay.fill(color)
+        surface.blit(overlay, (0, 0))
+        pygame.display.flip()
+        pygame.time.wait(duration)
+    except Exception as e:
+        logger.error(f"Error creating flash effect: {e}")
+
 def game_over_screen(screen, score):
     screen.fill(BLACK)
     draw_text(screen, f"Game Over! Score: {score}", 40, WHITE, WIDTH//2, HEIGHT//2 - 50)
@@ -141,6 +187,7 @@ def game_over_screen(screen, score):
     pygame.display.flip()
     
     waiting = True
+    timeout_counter = 0
     while waiting:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -150,8 +197,16 @@ def game_over_screen(screen, score):
                     return True
                 elif event.key == pygame.K_ESCAPE:
                     return False
+        
+        # Add timeout to prevent infinite loop (10 seconds)
+        timeout_counter += 1
+        pygame.time.wait(100)  # Wait 100ms
+        if timeout_counter > 100:  # 10 seconds timeout
+            logger.warning("Game over screen timeout - exiting")
+            return False
     
-    # This line was unreachable, removed redundant return
+    # Default return if somehow we exit the loop
+    return False
 
 def save_high_score(score):
     """Save high score to file with error handling"""
@@ -197,6 +252,7 @@ def load_high_score():
     return 0
 
 def main():
+    global screen
     try:
         # Create logs directory if it doesn't exist
         os.makedirs('logs', exist_ok=True)
@@ -248,32 +304,88 @@ def main():
                     continue
                     
                 if food.position is not None and snake.positions[0] == food.position:
-                    snake.eat()
-                    food.randomize_position(snake.positions)
-                    score += 10
-                    # Update high score display when new record is set
-                    if score > high_score:
-                        high_score = score
+                    if snake.eat():
+                        food.randomize_position(snake.positions)
+                        score += 10
+                        # Flash effect when eating food
+                        flash_screen(screen, WHITE, 50)
+                        logger.info(f"Food eaten! Score: {score}")
+                        # Update high score display when new record is set
+                        if score > high_score:
+                            high_score = score
+                    else:
+                        # Snake reached max length - player essentially won
+                        logger.info("Snake reached maximum length - game complete!")
+                        # Don't increment score when snake can't grow
+                        # Set food position to None to indicate game completion
+                        food.position = None
                     
-                screen.fill(BLACK)
+                # Wrap rendering operations in error handling
+                try:
+                    # Check if screen is valid before rendering
+                    if screen is None:
+                        logger.error("Screen object is None, attempting to reinitialize")
+                        try:
+                            screen = pygame.display.set_mode((WIDTH, HEIGHT))
+                            pygame.display.set_caption("Snake Game")
+                        except Exception as e:
+                            logger.critical(f"Cannot reinitialize display: {e}")
+                            running = False
+                            play_again = False
+                            break
+                    
+                    screen.fill(BLACK)
+                    
+                    # Draw snake with error handling
+                    for position in snake.positions:
+                        try:
+                            rect = pygame.Rect(position[0] * CELL_SIZE, position[1] * CELL_SIZE,
+                                              CELL_SIZE, CELL_SIZE)
+                            pygame.draw.rect(screen, GREEN, rect)
+                            pygame.draw.rect(screen, BLACK, rect, 1)
+                        except pygame.error as e:
+                            logger.error(f"Error drawing snake segment at {position}: {e}")
+                    
+                    # Add null check for food.position before drawing
+                    if food.position is not None:
+                        try:
+                            food_rect = pygame.Rect(food.position[0] * CELL_SIZE, 
+                                                   food.position[1] * CELL_SIZE,
+                                                   CELL_SIZE, CELL_SIZE)
+                            pygame.draw.rect(screen, RED, food_rect)
+                        except pygame.error as e:
+                            logger.error(f"Error drawing food at {food.position}: {e}")
+                    
+                    draw_text(screen, f"Score: {score} | High Score: {high_score}", 30, WHITE, WIDTH//2, 30)
+                    
+                    pygame.display.flip()
+                except pygame.error as e:
+                    logger.error(f"Critical rendering error: {e}")
+                    # Try to recover by reinitializing display
+                    try:
+                        pygame.display.quit()
+                        pygame.display.init()
+                        screen = pygame.display.set_mode((WIDTH, HEIGHT))
+                        pygame.display.set_caption("Snake Game")
+                        logger.warning("Display reinitialized after rendering error")
+                    except Exception as reinit_error:
+                        logger.critical(f"Failed to reinitialize display: {reinit_error}")
+                        running = False
+                        play_again = False
+                        # Exit immediately when display cannot be recovered
+                        break
+                except Exception as e:
+                    logger.error(f"Unexpected rendering error: {e}")
                 
-                for position in snake.positions:
-                    rect = pygame.Rect(position[0] * CELL_SIZE, position[1] * CELL_SIZE,
-                                      CELL_SIZE, CELL_SIZE)
-                    pygame.draw.rect(screen, GREEN, rect)
-                    pygame.draw.rect(screen, BLACK, rect, 1)
-                
-                # Add null check for food.position before drawing
-                if food.position is not None:
-                    food_rect = pygame.Rect(food.position[0] * CELL_SIZE, 
-                                           food.position[1] * CELL_SIZE,
-                                           CELL_SIZE, CELL_SIZE)
-                    pygame.draw.rect(screen, RED, food_rect)
-                
-                draw_text(screen, f"Score: {score} | High Score: {high_score}", 30, WHITE, WIDTH//2, 30)
-                
-                pygame.display.flip()
-                clock.tick(10)
+                try:
+                    clock.tick(10)
+                except Exception as e:
+                    logger.error(f"Clock tick error: {e}")
+                    # Try to limit frame rate manually
+                    try:
+                        pygame.time.wait(100)  # Wait 100ms (10 FPS)
+                    except:
+                        pass  # Continue without any frame rate limiting
             
         except Exception as e:
             logger.error(f"Error during game loop: {e}")

@@ -6,6 +6,7 @@ All logs are saved to cc_app.log with rotation support.
 import logging
 import logging.handlers
 import os
+import shutil
 from datetime import datetime
 
 
@@ -123,3 +124,67 @@ def log_exception(logger, exception, context=""):
     logger.error(f"Type: {type(exception).__name__}")
     logger.error(f"Message: {str(exception)}")
     logger.exception("Full traceback:")
+
+
+def rotate_log_file(log_file='cc_app.log', archive_dir='archive'):
+    """
+    Manually rotate the log file by saving current log with timestamp and starting fresh.
+    
+    Args:
+        log_file: Path to the log file to rotate
+        archive_dir: Directory to store archived logs
+        
+    Returns:
+        Path to the archived file or None if rotation failed
+    """
+    if not os.path.exists(log_file):
+        return None
+        
+    # Create archive directory if it doesn't exist
+    if not os.path.exists(archive_dir):
+        os.makedirs(archive_dir)
+    
+    # Generate timestamp-based filename
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    base_name = os.path.basename(log_file)
+    name_parts = os.path.splitext(base_name)
+    archived_name = f"{name_parts[0]}_{timestamp}{name_parts[1]}"
+    archived_path = os.path.join(archive_dir, archived_name)
+    
+    try:
+        # Get absolute path of log file
+        log_file_abs = os.path.abspath(log_file)
+        
+        # Close and remove ALL handlers that reference this log file
+        all_loggers = [logging.getLogger()]  # Start with root logger
+        
+        # Add all named loggers
+        for name in logging.Logger.manager.loggerDict:
+            all_loggers.append(logging.getLogger(name))
+        
+        # Remove handlers from all loggers
+        for logger in all_loggers:
+            handlers_to_remove = []
+            for handler in logger.handlers[:]:
+                if isinstance(handler, (logging.FileHandler, logging.handlers.RotatingFileHandler)):
+                    # Check if this handler is writing to our log file
+                    if hasattr(handler, 'baseFilename') and os.path.abspath(handler.baseFilename) == log_file_abs:
+                        handler.close()
+                        handlers_to_remove.append(handler)
+            
+            # Remove the handlers
+            for handler in handlers_to_remove:
+                logger.removeHandler(handler)
+        
+        # Move the current log file to archive
+        shutil.move(log_file, archived_path)
+        
+        # Clear the handlers list for all loggers to force reinitialization
+        for logger in all_loggers:
+            logger.handlers.clear()
+        
+        return archived_path
+        
+    except Exception as e:
+        print(f"Error rotating log file: {e}")
+        return None

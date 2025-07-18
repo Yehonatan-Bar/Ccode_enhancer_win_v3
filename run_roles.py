@@ -5,6 +5,7 @@ import argparse
 import time
 import os
 import json
+import platform
 from cc_logging import setup_logger, log_session_start, log_session_end, log_exception, log_claude_invocation, log_claude_response
 
 def get_git_diff_last_commit():
@@ -12,14 +13,32 @@ def get_git_diff_last_commit():
     logger = setup_logger('cc_enhancer.roles')
     try:
         logger.debug("Getting git diff from last commit")
-        # Run the external script
+        # Use the current environment to ensure git is available
+        env = os.environ.copy()
+        # Ensure Git is in PATH on Windows
+        if platform.system() == 'Windows':
+            git_paths = [
+                r'C:\Program Files\Git\cmd',
+                r'C:\Program Files\Git\bin',
+                r'C:\Program Files (x86)\Git\cmd',
+                r'C:\Program Files (x86)\Git\bin'
+            ]
+            for path in git_paths:
+                if os.path.exists(path) and path not in env.get('PATH', ''):
+                    env['PATH'] = f"{path};{env.get('PATH', '')}"
+                    logger.debug(f"Added Git to PATH: {path}")
+                    break
+        
+        # Run the external script with a timeout
         result = subprocess.run(
             ['python', 'git_diff_last_commit.py'],
             capture_output=True,
             text=True,
             encoding='utf-8',
             errors='replace',
-            check=False
+            check=False,
+            env=env,
+            timeout=30  # 30 second timeout
         )
         
         if result.returncode == 0 and result.stdout:
@@ -53,6 +72,9 @@ def get_git_diff_last_commit():
             logger.error(f"Git diff command failed with return code: {result.returncode}")
             return "\n\n# Git Diff: Failed to get diff information."
             
+    except subprocess.TimeoutExpired:
+        logger.error("git_diff_last_commit.py timed out after 30 seconds")
+        return "\n\n# Git Diff: Script timed out (possibly Git not in PATH or repository issues)"
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         logger.error(f"Failed to run git_diff_last_commit.py: {e}")
         return "\n\n# Git Diff: Could not run git_diff_last_commit.py"
@@ -100,6 +122,35 @@ def build_role_prompt(role_name, role_prompts, severities):
     
     return "\n\n".join(prompt_parts) if prompt_parts else None
 
+def is_empty_claude_response(stdout):
+    """Check if Claude's response is empty (contains only boilerplate text)."""
+    if not stdout:
+        return True
+    
+    # Check if the response only contains the standard header/footer without actual content
+    lines = stdout.strip().split('\n')
+    # Look for the response delimiter pattern
+    response_start = False
+    response_end = False
+    content_lines = []
+    
+    for line in lines:
+        if "Claude's Response:" in line:
+            response_start = True
+            continue
+        if response_start and "=" * 40 in line:
+            if not content_lines:  # First separator after "Claude's Response:"
+                continue
+            else:  # Second separator, marks end
+                response_end = True
+                break
+        if response_start and not response_end:
+            if line.strip():  # Only count non-empty lines
+                content_lines.append(line)
+    
+    # If we found the structure but no content, it's empty
+    return response_start and len(content_lines) == 0
+
 def run_claude_with_role(role_prompt, additional_prompt="", role_name="Unknown"):
     """Run the claude command with the given role prompt."""
     logger = setup_logger('cc_enhancer.roles')
@@ -116,43 +167,67 @@ def run_claude_with_role(role_prompt, additional_prompt="", role_name="Unknown")
     logger.info(f"Invoking Claude for role: {role_name}")
     log_claude_invocation(logger, enhanced_prompt, ' '.join(command))
     
-    try:
-        print(f"\n{'='*60}")
-        print(f"Running Claude with role prompt...")
-        print(f"{'='*60}\n")
-        
-        # Run the command and wait for it to complete
-        logger.info("Executing Claude subprocess...")
-        result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', errors='replace')
-        
-        # Print the output
-        if result.stdout:
-            try:
-                print(result.stdout)
-            except UnicodeEncodeError:
-                print(result.stdout.encode('ascii', 'replace').decode('ascii'))
-        
-        if result.stderr:
-            try:
-                print(f"Error output: {result.stderr}", file=sys.stderr)
-            except UnicodeEncodeError:
-                print(f"Error output: {result.stderr.encode('ascii', 'replace').decode('ascii')}", file=sys.stderr)
-        
-        # Log Claude response
-        log_claude_response(logger, result.stdout if result.stdout else result.stderr, result.returncode, result.stderr if result.returncode != 0 else None)
-        
-        if result.returncode != 0:
-            print(f"Command failed with return code: {result.returncode}")
-            logger.error(f"Claude execution failed for role {role_name} with return code: {result.returncode}")
-        else:
-            logger.info(f"Claude execution succeeded for role {role_name}")
-        
-        return result.returncode == 0
-        
-    except Exception as e:
-        print(f"Error running command: {e}", file=sys.stderr)
-        log_exception(logger, e, f"run_claude_with_role for {role_name}")
-        return False
+    max_attempts = 2
+    for attempt in range(1, max_attempts + 1):
+        try:
+            if attempt > 1:
+                logger.warning(f"Retrying Claude invocation for role {role_name} (attempt {attempt}/{max_attempts})")
+                print(f"\n⚠️  Retrying due to empty response (attempt {attempt}/{max_attempts})...")
+                time.sleep(3)  # Brief delay before retry
+            
+            print(f"\n{'='*60}")
+            print(f"Running Claude with role prompt...")
+            print(f"{'='*60}\n")
+            
+            # Run the command and wait for it to complete
+            logger.info("Executing Claude subprocess...")
+            result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', errors='replace')
+            
+            # Check for empty response
+            if result.returncode == 0 and is_empty_claude_response(result.stdout):
+                logger.warning(f"Claude returned empty response for role {role_name} on attempt {attempt}")
+                if attempt < max_attempts:
+                    continue  # Try again
+                else:
+                    # Final attempt failed with empty response
+                    print(f"\n❌ ERROR: Claude returned empty response for role '{role_name}' after {max_attempts} attempts")
+                    print(f"This may be due to API issues, rate limiting, or temporary service problems.")
+                    print(f"Moving to next role...\n")
+                    logger.error(f"Claude returned empty response for role {role_name} after {max_attempts} attempts")
+                    return False
+            
+            # Print the output
+            if result.stdout:
+                try:
+                    print(result.stdout)
+                except UnicodeEncodeError:
+                    print(result.stdout.encode('ascii', 'replace').decode('ascii'))
+            
+            if result.stderr:
+                try:
+                    print(f"Error output: {result.stderr}", file=sys.stderr)
+                except UnicodeEncodeError:
+                    print(f"Error output: {result.stderr.encode('ascii', 'replace').decode('ascii')}", file=sys.stderr)
+            
+            # Log Claude response
+            log_claude_response(logger, result.stdout if result.stdout else result.stderr, result.returncode, result.stderr if result.returncode != 0 else None)
+            
+            if result.returncode != 0:
+                print(f"Command failed with return code: {result.returncode}")
+                logger.error(f"Claude execution failed for role {role_name} with return code: {result.returncode}")
+                return False
+            else:
+                logger.info(f"Claude execution succeeded for role {role_name}")
+                return True
+                
+        except Exception as e:
+            print(f"Error running command: {e}", file=sys.stderr)
+            log_exception(logger, e, f"run_claude_with_role for {role_name}")
+            if attempt < max_attempts:
+                continue
+            return False
+    
+    return False
 
 def main():
     # Set up logger

@@ -169,6 +169,128 @@ def create_log_file():
     log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), log_filename)
     return log_path
 
+
+def handle_interactive_prompts(process, output_queue, output_lines, log_file, timeout, logger):
+    """Handle interactive prompts from Claude CLI with comprehensive prompt detection."""
+    start_time = time.time()
+    last_output_time = time.time()
+    no_output_count = 0
+    
+    # Comprehensive prompt patterns with appropriate responses
+    prompt_patterns = [
+        # Question patterns
+        ("?", None),  # Any question mark - determine response based on context
+        ("y/n", "y"),
+        ("yes/no", "yes"),
+        ("continue", ""),  # Just Enter
+        ("press enter", ""),
+        ("press any key", ""),
+        # Permission patterns
+        ("permission", "1"),
+        ("allow", "1"),
+        ("do you want", "1"),
+        ("would you like", "1"),
+        # Confirmation patterns
+        ("confirm", "y"),
+        ("proceed", "y"),
+        ("are you sure", "y"),
+        # Pause patterns
+        ("paused", ""),
+        ("waiting", ""),
+        ("[more]", ""),
+        ("--more--", ""),
+        # Auth patterns
+        ("password:", ""),
+        ("api key:", ""),
+        ("authenticate", ""),
+    ]
+    
+    while True:
+        # Check timeout
+        if time.time() - start_time > timeout:
+            logger.warning(f"Timeout after {timeout} seconds")
+            process.terminate()
+            return False
+        
+        # Check if process has finished
+        if process.poll() is not None:
+            return True
+        
+        # Read output with timeout
+        try:
+            line = output_queue.get(timeout=0.5)
+            output_lines.append(line)
+            last_output_time = time.time()
+            no_output_count = 0
+            
+            # Write to log file
+            log_file.write(line)
+            log_file.flush()
+            
+            # Check for prompts using multiple patterns
+            line_lower = line.lower().strip()
+            for pattern, response in prompt_patterns:
+                if pattern in line_lower:
+                    logger.info(f"Detected prompt pattern '{pattern}' in: {line.strip()}")
+                    print(f"Detected prompt pattern '{pattern}' in: {line.strip()}")
+                    
+                    if response is None:
+                        # Try to determine appropriate response
+                        if "y/n" in line_lower or "yes/no" in line_lower:
+                            response = "y"
+                        elif "continue" in line_lower or "press" in line_lower:
+                            response = ""
+                        elif "1)" in line or "option" in line_lower:
+                            response = "1"  # Default to option 1
+                        else:
+                            response = ""  # Default to Enter
+                    
+                    print(f"Auto-responding with: '{response}' + Enter")
+                    logger.info(f"Sending response: '{response}' + Enter")
+                    try:
+                        process.stdin.write(f"{response}\n")
+                        process.stdin.flush()
+                    except Exception as e:
+                        logger.error(f"Failed to send response: {e}")
+                    break
+                
+        except queue.Empty:
+            # No output received
+            no_output_count += 1
+            
+            # Progressive intervention based on no output duration
+            time_since_output = time.time() - last_output_time
+            
+            if time_since_output > 10.0 and no_output_count % 20 == 0:  # Every 10 seconds
+                logger.info(f"No output for {int(time_since_output)} seconds, sending Enter key...")
+                print(f"No output detected for {int(time_since_output)} seconds, sending Enter...")
+                try:
+                    process.stdin.write("\n")
+                    process.stdin.flush()
+                except:
+                    pass
+            
+            elif time_since_output > 30.0 and no_output_count % 60 == 0:  # Every 30 seconds
+                logger.warning(f"No output for {int(time_since_output)} seconds, trying 'y' + Enter...")
+                print(f"No output for {int(time_since_output)} seconds, sending 'y' + Enter...")
+                try:
+                    process.stdin.write("y\n")
+                    process.stdin.flush()
+                except:
+                    pass
+            
+            elif time_since_output > 60.0:  # After 60 seconds
+                logger.error("No output for over 60 seconds, process may be stuck")
+                print("WARNING: No output for over 60 seconds, process appears stuck")
+                # Don't terminate yet, give it more time
+                
+            continue
+            
+        except Exception as e:
+            logger.error(f"Error reading output: {e}")
+            print(f"Error reading output: {e}")
+            return False
+
 def run_claude_windows(prompt, skip_permissions=False, timeout=300):
     """Run Claude on Windows with interactive prompt handling."""
     logger = setup_logger('cc_enhancer.claude')
@@ -244,9 +366,9 @@ def run_claude_windows(prompt, skip_permissions=False, timeout=300):
                 shell=use_shell
             )
             
-            # Send the prompt via stdin and close it
+            # Send the prompt via stdin but DON'T close it for interactive handling
             process.stdin.write(prompt)
-            process.stdin.close()
+            process.stdin.flush()  # Flush instead of close to keep stdin open
         else:
             process = subprocess.Popen(
                 ' '.join(f'"{c}"' if ' ' in c else c for c in cmd) if use_shell else cmd,
@@ -289,39 +411,11 @@ def run_claude_windows(prompt, skip_permissions=False, timeout=300):
         stdout_thread.start()
         stderr_thread.start()
         
-        # Monitor output and handle prompts
-        start_time = time.time()
-        while True:
-            # Check timeout
-            if time.time() - start_time > timeout:
-                process.terminate()
-                return "", -1
-            
-            # Check if process has finished
-            if process.poll() is not None:
-                break
-            
-            # Read output with timeout
-            try:
-                line = output_queue.get(timeout=0.1)
-                output_lines.append(line)
-                
-                # Write to log file
-                log_file.write(line)
-                log_file.flush()
-                
-                # Check for permission prompts
-                if ("Do you want" in line and "?" in line) or ("permission" in line.lower() and "?" in line):
-                    print(f"Detected prompt: {line.strip()}")
-                    print("Auto-responding with '1' (yes)...")
-                    process.stdin.write('1\n')
-                    process.stdin.flush()
-                    
-            except queue.Empty:
-                continue
-            except Exception as e:
-                print(f"Error reading output: {e}")
-                break
+        # Use the helper function to handle interactive prompts
+        success = handle_interactive_prompts(process, output_queue, output_lines, log_file, timeout, logger)
+        if not success and process.poll() is None:
+            # Timeout occurred
+            return "", -1
         
         # Wait for threads to finish
         stdout_thread.join(timeout=1)
@@ -411,7 +505,7 @@ def run_claude_unix(prompt, skip_permissions=False, timeout=300):
         # Send prompt via stdin if needed
         if use_stdin:
             process.stdin.write(prompt)
-            process.stdin.close()
+            process.stdin.flush()  # Flush instead of close to keep stdin open for interactive handling
         
         # Collect output
         output_lines = []
@@ -442,39 +536,11 @@ def run_claude_unix(prompt, skip_permissions=False, timeout=300):
         stdout_thread.start()
         stderr_thread.start()
         
-        # Monitor output and handle prompts
-        start_time = time.time()
-        while True:
-            # Check timeout
-            if time.time() - start_time > timeout:
-                process.terminate()
-                return "", -1
-            
-            # Check if process has finished
-            if process.poll() is not None:
-                break
-            
-            # Read output with timeout
-            try:
-                line = output_queue.get(timeout=0.1)
-                output_lines.append(line)
-                
-                # Write to log file
-                log_file.write(line)
-                log_file.flush()
-                
-                # Check for permission prompts
-                if ("Do you want" in line and "?" in line) or ("permission" in line.lower() and "?" in line):
-                    print(f"Detected prompt: {line.strip()}")
-                    print("Auto-responding with '1' (yes)...")
-                    process.stdin.write('1\n')
-                    process.stdin.flush()
-                    
-            except queue.Empty:
-                continue
-            except Exception as e:
-                print(f"Error reading output: {e}")
-                break
+        # Use the helper function to handle interactive prompts
+        success = handle_interactive_prompts(process, output_queue, output_lines, log_file, timeout, logger)
+        if not success and process.poll() is None:
+            # Timeout occurred
+            return "", -1
         
         # Wait for threads to finish
         stdout_thread.join(timeout=1)

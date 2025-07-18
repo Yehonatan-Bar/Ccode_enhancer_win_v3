@@ -6,7 +6,7 @@
       "best_practice": false
     },
     "security review": {
-      "critical": true,
+      "critical": false,
       "standard": false,
       "best_practice": false
     },
@@ -16,8 +16,8 @@
       "best_practice": false
     },
     "code quality": {
-      "critical": true,
-      "standard": true,
+      "critical": false,
+      "standard": false,
       "best_practice": false
     },
     "testing coverage": {
@@ -61,7 +61,7 @@
       "best_practice": false
     },
     "logging implementation": {
-      "critical": true,
+      "critical": false,
       "standard": false,
       "best_practice": false
     },
@@ -71,11 +71,16 @@
       "best_practice": false
     },
     "integration compatibility": {
-      "critical": true,
+      "critical": false,
       "standard": false,
       "best_practice": false
     },
     "state and data flow": {
+      "critical": false,
+      "standard": false,
+      "best_practice": false
+    },
+    "execution verification": {
       "critical": true,
       "standard": true,
       "best_practice": false

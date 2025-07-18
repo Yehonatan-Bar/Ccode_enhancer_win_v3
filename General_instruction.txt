@@ -76,7 +76,7 @@ python run_roles_wrapper.py --additional-context "User requested to implement re
 ```
 Followed by:
 - Implement recommendations from run_roles_wrapper.py
-
+- Add the recommendations you received as part of your work process to your to-do list. After receiving the recommendations, I expect to see new items added to your to-do list.
 ---------
 
 Note! Use Ultrathink mode. Think hard, think deep, Reason thoughtfully and thoroughly, Engage in wise and comprehensive reasoning.

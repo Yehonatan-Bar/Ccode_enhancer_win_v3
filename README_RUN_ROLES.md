@@ -174,6 +174,32 @@ Increase delay for more time to review each output:
 python run_roles.py --delay 10
 ```
 
+### Automatic Retry for Empty Responses
+The script now includes automatic retry logic to handle cases where Claude returns empty responses:
+
+**Features:**
+- Detects when Claude returns only boilerplate text without actual analysis
+- Automatically retries once after a 3-second delay
+- Logs retry attempts for debugging
+- Provides informative error messages if retries fail
+
+**Behavior:**
+- If Claude returns an empty response, the script will:
+  1. Log a warning about the empty response
+  2. Wait 3 seconds
+  3. Retry the same role prompt once
+  4. If the retry also fails, it logs an error and continues to the next role
+
+**Error Messages:**
+When a role fails after retries, you'll see:
+```
+❌ ERROR: Claude returned empty response for role 'role_name' after 2 attempts
+This may be due to API issues, rate limiting, or temporary service problems.
+Moving to next role...
+```
+
+This ensures that temporary API issues don't stop the entire review process.
+
 ## Benefits
 
 1. **Comprehensive Coverage**: Multiple specialized perspectives on code changes

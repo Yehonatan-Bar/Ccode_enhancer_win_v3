@@ -266,6 +266,7 @@ def main():
             snake = Snake()
             food = Food()
             running = True
+            paused = False
             score = 0
             high_score = load_high_score()
             logger.info("New game started")
@@ -293,32 +294,40 @@ def main():
                                 running = False
                                 play_again = False
                                 logger.info("Game exited by user")
+                            elif event.key == pygame.K_p:
+                                paused = not paused
+                                if paused:
+                                    logger.info("Game paused")
+                                else:
+                                    logger.info("Game resumed")
                         except Exception as e:
                             logger.error(f"Error handling key press: {e}")
                 
-                if not snake.move():
-                    logger.info(f"Game over! Final score: {score}")
-                    save_high_score(score)
-                    play_again = game_over_screen(screen, score)
-                    running = False
-                    continue
+                # Skip game logic if paused
+                if not paused:
+                    if not snake.move():
+                        logger.info(f"Game over! Final score: {score}")
+                        save_high_score(score)
+                        play_again = game_over_screen(screen, score)
+                        running = False
+                        continue
                     
-                if food.position is not None and snake.positions[0] == food.position:
-                    if snake.eat():
-                        food.randomize_position(snake.positions)
-                        score += 10
-                        # Flash effect when eating food
-                        flash_screen(screen, WHITE, 50)
-                        logger.info(f"Food eaten! Score: {score}")
-                        # Update high score display when new record is set
-                        if score > high_score:
-                            high_score = score
-                    else:
-                        # Snake reached max length - player essentially won
-                        logger.info("Snake reached maximum length - game complete!")
-                        # Don't increment score when snake can't grow
-                        # Set food position to None to indicate game completion
-                        food.position = None
+                    if food.position is not None and snake.positions[0] == food.position:
+                        if snake.eat():
+                            food.randomize_position(snake.positions)
+                            score += 10
+                            # Flash effect when eating food
+                            flash_screen(screen, WHITE, 50)
+                            logger.info(f"Food eaten! Score: {score}")
+                            # Update high score display when new record is set
+                            if score > high_score:
+                                high_score = score
+                        else:
+                            # Snake reached max length - player essentially won
+                            logger.info("Snake reached maximum length - game complete!")
+                            # Don't increment score when snake can't grow
+                            # Set food position to None to indicate game completion
+                            food.position = None
                     
                 # Wrap rendering operations in error handling
                 try:
@@ -358,6 +367,11 @@ def main():
                     
                     draw_text(screen, f"Score: {score} | High Score: {high_score}", 30, WHITE, WIDTH//2, 30)
                     
+                    # Display pause text if game is paused
+                    if paused:
+                        draw_text(screen, "PAUSED", 60, WHITE, WIDTH//2, HEIGHT//2)
+                        draw_text(screen, "Press P to resume", 25, WHITE, WIDTH//2, HEIGHT//2 + 50)
+                    
                     pygame.display.flip()
                 except pygame.error as e:
                     logger.error(f"Critical rendering error: {e}")
@@ -378,7 +392,11 @@ def main():
                     logger.error(f"Unexpected rendering error: {e}")
                 
                 try:
-                    clock.tick(10)
+                    # Use slower tick rate when paused to save CPU
+                    if paused:
+                        clock.tick(30)  # 30 FPS when paused (just for UI updates)
+                    else:
+                        clock.tick(10)  # Normal game speed
                 except Exception as e:
                     logger.error(f"Clock tick error: {e}")
                     # Try to limit frame rate manually

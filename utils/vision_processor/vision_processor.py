@@ -3,18 +3,18 @@ import base64
 from groq import Groq
 from typing import Optional
 import sys
-import json
+import logging
 
 # Correctly determine project_root (three levels up from vision_processor.py)
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root) # Append project_root to sys.path
-from logs.setup_logging import setup_logging
 
-config_path = os.path.join(project_root, 'config.json')
-with open(config_path, 'r') as f:
-    config = json.load(f)
-config['logging']['log_file'] = os.path.basename(__file__).replace('.py', '.log')
-logger = setup_logging(config, __file__)
+# Import the existing logging utility
+from cc_logging import setup_logger
+
+# Set up logger for this module
+log_file = os.path.join(project_root, 'logs', 'vision_processor.log')
+logger = setup_logger('vision_processor', log_file)
 
 def _encode_image(image_path: str) -> str:
     """Encode local image to base64 string."""

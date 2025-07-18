@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Pong Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a1a1a;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        #gameContainer {
+            text-align: center;
+        }
+        #gameCanvas {
+            border: 2px solid #fff;
+            background-color: #000;
+            margin: 20px auto;
+            display: block;
+        }
+        #scoreBoard {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        #controls {
+            margin-top: 20px;
+        }
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 0 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .screen {
+            padding: 20px;
+            text-align: center;
+        }
+        .home-buttons {
+            margin: 30px 0;
+        }
+        .home-btn {
+            font-size: 24px;
+            padding: 15px 30px;
+            margin: 10px;
+            width: 200px;
+        }
+        #instructions {
+            max-width: 500px;
+            margin: 20px auto;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        #instructions h3 {
+            text-align: center;
+        }
+        #gameStatus {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        #debugConsole {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-y: auto;
+            padding: 10px;
+            border-top: 1px solid #0f0;
+            pointer-events: none;
+        }
+        #debugConsole:hover {
+            pointer-events: auto;
+        }
+        .log-entry {
+            margin: 2px 0;
+        }
+        .log-info { color: #0f0; }
+        .log-warn { color: #ff0; }
+        .log-error { color: #f00; }
+    </style>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div id="homeScreen" class="screen">
+        <h1>Welcome to Ping Pong Game</h1>
+        <p>Challenge your friends in this classic arcade game!</p>
+        <div class="home-buttons">
+            <button id="startGameBtn" class="home-btn">Start Game</button>
+            <button id="instructionsBtn" class="home-btn">Instructions</button>
+        </div>
+        <div id="instructions" style="display: none;">
+            <h3>How to Play:</h3>
+            <ul>
+                <li>Move your mouse up/down to control your paddle</li>
+                <li>First player to score 5 points wins</li>
+                <li>Click "Join Game" to enter the match</li>
+                <li>Both players must click "Ready" to start</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div id="gameContainer" style="display: none;">
+        <h1>Ping Pong Game</h1>
+        <div id="scoreBoard">
+            <span id="player1Score">Player 1: 0</span> | 
+            <span id="player2Score">Player 2: 0</span>
+        </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="controls">
+            <button id="joinBtn">Join Game</button>
+            <button id="readyBtn" disabled>Ready</button>
+            <button id="resetBtn">Reset Game</button>
+            <button id="backHomeBtn">Back to Home</button>
+        </div>
+        <div id="gameStatus">Waiting for players...</div>
+    </div>
+    
+    <div id="debugConsole">
+        <div style="color: #0f0; font-weight: bold;">Debug Console:</div>
+    </div>
+
+    <script>
+        // Debug console logger
+        const debugConsole = document.getElementById('debugConsole');
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+
+        function addLogEntry(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            debugConsole.appendChild(entry);
+            debugConsole.scrollTop = debugConsole.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLogEntry(args.join(' '), 'info');
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLogEntry(args.join(' '), 'warn');
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLogEntry(args.join(' '), 'error');
+        };
+
+        // Game initialization
+        console.log('Initializing Ping Pong Game...');
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const socket = io();
+
+        // Game state
+        let gameState = {
+            ball: { x: 400, y: 300, vx: 5, vy: 3, radius: 10 },
+            paddles: {
+                player1: { x: 50, y: 250, width: 15, height: 100 },
+                player2: { x: 735, y: 250, width: 15, height: 100 }
+            },
+            scores: { player1: 0, player2: 0 },
+            playerNum: null,
+            gameActive: false,
+            isHost: false
+        };
+
+        // Socket event handlers
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('disconnect', () => {
+            console.error('Disconnected from server');
+            document.getElementById('gameStatus').textContent = 'Disconnected from server';
+        });
+
+        socket.on('player_joined', (data) => {
+            console.log(`Player joined. Total players: ${data.players}`);
+            if (data.player_num === 1) {
+                gameState.isHost = true;
+                console.log('You are the host player');
+            }
+        });
+
+        socket.on('game_full', () => {
+            console.warn('Game is full!');
+            document.getElementById('joinBtn').disabled = true;
+            document.getElementById('gameStatus').textContent = 'Game is full';
+        });
+
+        socket.on('player_joined', (data) => {
+            gameState.playerNum = data.player_num;
+            document.getElementById('joinBtn').disabled = true;
+            document.getElementById('readyBtn').disabled = false;
+            document.getElementById('gameStatus').textContent = `You are Player ${data.player_num}. Click Ready to start!`;
+            console.log(`Joined as Player ${data.player_num}`);
+        });
+
+        socket.on('game_start', () => {
+            console.log('Game started!');
+            gameState.gameActive = true;
+            document.getElementById('readyBtn').disabled = true;
+            document.getElementById('gameStatus').textContent = 'Game in progress';
+            if (gameState.isHost) {
+                gameLoop();
+            }
+        });
+
+        socket.on('paddle_update', (data) => {
+            gameState.paddles[data.player].y = data.y;
+            console.log(`Paddle update received: ${data.player} y=${data.y}`);
+        });
+
+        socket.on('ball_position', (data) => {
+            if (!gameState.isHost) {
+                gameState.ball = { ...gameState.ball, ...data };
+            }
+        });
+
+        socket.on('score_changed', (scores) => {
+            gameState.scores = scores;
+            updateScoreDisplay();
+            console.log(`Score update: Player1=${scores.player1}, Player2=${scores.player2}`);
+        });
+
+        socket.on('game_over', (data) => {
+            gameState.gameActive = false;
+            document.getElementById('gameStatus').textContent = `Game Over! ${data.winner} wins!`;
+            console.log(`Game over! Winner: ${data.winner}`);
+        });
+
+        socket.on('game_reset', () => {
+            console.log('Game reset');
+            resetLocalGame();
+        });
+
+        // Home screen handlers
+        document.getElementById('startGameBtn').addEventListener('click', () => {
+            console.log('Start Game button clicked - navigating to game screen');
+            document.getElementById('homeScreen').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'block';
+            console.log('Game screen displayed');
+        });
+
+        document.getElementById('instructionsBtn').addEventListener('click', () => {
+            const instructions = document.getElementById('instructions');
+            instructions.style.display = instructions.style.display === 'none' ? 'block' : 'none';
+            console.log('Instructions toggled');
+        });
+
+        document.getElementById('backHomeBtn').addEventListener('click', () => {
+            console.log('Back to Home clicked - returning to home screen');
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('homeScreen').style.display = 'block';
+            // Reset game state
+            socket.emit('reset_game');
+            resetLocalGame();
+            console.log('Returned to home screen and reset game');
+        });
+
+        // Game button handlers
+        document.getElementById('joinBtn').addEventListener('click', () => {
+            socket.emit('join_game', { name: `Player_${Math.floor(Math.random() * 1000)}` });
+            console.log('Joining game...');
+        });
+
+        document.getElementById('readyBtn').addEventListener('click', () => {
+            socket.emit('player_ready');
+            console.log('Ready signal sent');
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            socket.emit('reset_game');
+            console.log('Reset game requested');
+        });
+
+        // Mouse controls
+        canvas.addEventListener('mousemove', (e) => {
+            if (!gameState.gameActive || !gameState.playerNum) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            const paddleKey = `player${gameState.playerNum}`;
+            
+            // Constrain paddle position
+            const constrainedY = Math.max(50, Math.min(550, y - 50));
+            gameState.paddles[paddleKey].y = constrainedY;
+            
+            socket.emit('paddle_move', { y: constrainedY });
+            console.log(`Paddle moved to y=${constrainedY}`);
+        });
+
+        // Game functions
+        function updateScoreDisplay() {
+            document.getElementById('player1Score').textContent = `Player 1: ${gameState.scores.player1}`;
+            document.getElementById('player2Score').textContent = `Player 2: ${gameState.scores.player2}`;
+        }
+
+        function drawGame() {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw center line
+            ctx.setLineDash([5, 15]);
+            ctx.strokeStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw paddles
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(
+                gameState.paddles.player1.x,
+                gameState.paddles.player1.y,
+                gameState.paddles.player1.width,
+                gameState.paddles.player1.height
+            );
+            ctx.fillRect(
+                gameState.paddles.player2.x,
+                gameState.paddles.player2.y,
+                gameState.paddles.player2.width,
+                gameState.paddles.player2.height
+            );
+
+            // Draw ball
+            ctx.beginPath();
+            ctx.arc(gameState.ball.x, gameState.ball.y, gameState.ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+        }
+
+        function updateBall() {
+            if (!gameState.isHost || !gameState.gameActive) return;
+
+            // Update ball position
+            gameState.ball.x += gameState.ball.vx;
+            gameState.ball.y += gameState.ball.vy;
+
+            // Ball collision with top/bottom walls
+            if (gameState.ball.y - gameState.ball.radius <= 0 || 
+                gameState.ball.y + gameState.ball.radius >= canvas.height) {
+                gameState.ball.vy = -gameState.ball.vy;
+                console.log('Ball hit wall');
+            }
+
+            // Ball collision with paddles
+            const ballLeft = gameState.ball.x - gameState.ball.radius;
+            const ballRight = gameState.ball.x + gameState.ball.radius;
+            const ballTop = gameState.ball.y - gameState.ball.radius;
+            const ballBottom = gameState.ball.y + gameState.ball.radius;
+
+            // Player 1 paddle collision
+            if (ballLeft <= gameState.paddles.player1.x + gameState.paddles.player1.width &&
+                ballRight >= gameState.paddles.player1.x &&
+                ballBottom >= gameState.paddles.player1.y &&
+                ballTop <= gameState.paddles.player1.y + gameState.paddles.player1.height &&
+                gameState.ball.vx < 0) {
+                gameState.ball.vx = -gameState.ball.vx;
+                console.log('Ball hit player 1 paddle');
+            }
+
+            // Player 2 paddle collision
+            if (ballRight >= gameState.paddles.player2.x &&
+                ballLeft <= gameState.paddles.player2.x + gameState.paddles.player2.width &&
+                ballBottom >= gameState.paddles.player2.y &&
+                ballTop <= gameState.paddles.player2.y + gameState.paddles.player2.height &&
+                gameState.ball.vx > 0) {
+                gameState.ball.vx = -gameState.ball.vx;
+                console.log('Ball hit player 2 paddle');
+            }
+
+            // Score detection
+            if (gameState.ball.x < 0) {
+                socket.emit('score_update', { player: 'player2' });
+                console.log('Player 2 scored!');
+                resetBall();
+            } else if (gameState.ball.x > canvas.width) {
+                socket.emit('score_update', { player: 'player1' });
+                console.log('Player 1 scored!');
+                resetBall();
+            }
+
+            // Emit ball position
+            socket.emit('ball_update', {
+                x: gameState.ball.x,
+                y: gameState.ball.y,
+                vx: gameState.ball.vx,
+                vy: gameState.ball.vy
+            });
+        }
+
+        function resetBall() {
+            gameState.ball.x = 400;
+            gameState.ball.y = 300;
+            gameState.ball.vx = (Math.random() > 0.5 ? 1 : -1) * 5;
+            gameState.ball.vy = (Math.random() - 0.5) * 6;
+            console.log('Ball reset');
+        }
+
+        function resetLocalGame() {
+            gameState.scores = { player1: 0, player2: 0 };
+            gameState.gameActive = false;
+            gameState.playerNum = null;
+            document.getElementById('joinBtn').disabled = false;
+            document.getElementById('readyBtn').disabled = true;
+            document.getElementById('gameStatus').textContent = 'Waiting for players...';
+            updateScoreDisplay();
+            resetBall();
+        }
+
+        function gameLoop() {
+            if (gameState.gameActive) {
+                updateBall();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            drawGame();
+            requestAnimationFrame(animate);
+        }
+
+        // Start animation
+        animate();
+        console.log('Game initialized successfully');
+    </script>
+</body>
+</html>
